@@ -9,3 +9,7 @@ coverage/
 coverage.json
 deployed.json
 frontend/dist/
+ai-module/__pycache__/
+ai-module/*.pyc
+*.pyc
+__pycache__/
