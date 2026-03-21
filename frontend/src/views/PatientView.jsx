@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
+import { ethers } from "ethers";
 import toast from "react-hot-toast";
 import { useWallet } from "../hooks/useWallet";
 import { getPoints } from "../api/client";
 import { QRModal } from "../components/QRModal";
+import WaitRewardABI from "../abi/WaitReward.json";
 
-// Demo: un comercio hardcodeado. En producción vendría de la API.
+const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
+
+// Comercio registrado en Fuji
 const DEMO_COMMERCES = [
-  { label: "Farmacia Del Pueblo",  address: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC" },
-  { label: "Café Saludable",       address: "0x90F79bf6EB2c4f870365E785982E1f101E93b906" },
-  { label: "Óptica Central",       address: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65" },
+  { label: "Farmacia Del Pueblo", address: "0xb586790F5684d6E40a7e4dE353d08053D3eF9b41" },
 ];
 
 function truncate(addr) {
@@ -18,11 +20,12 @@ function truncate(addr) {
 
 export function PatientView() {
   const { address, connect, disconnect, isConnecting } = useWallet();
-  const [points,      setPoints]      = useState(null);
-  const [loadingPts,  setLoadingPts]  = useState(false);
-  const [redeemAmt,   setRedeemAmt]   = useState("");
-  const [commerce,    setCommerce]    = useState(DEMO_COMMERCES[0].address);
-  const [qrData,      setQrData]      = useState(null);
+  const [points,       setPoints]       = useState(null);
+  const [loadingPts,   setLoadingPts]   = useState(false);
+  const [redeemAmt,    setRedeemAmt]    = useState("");
+  const [commerce,     setCommerce]     = useState(DEMO_COMMERCES[0].address);
+  const [redeeming,    setRedeeming]    = useState(false);
+  const [qrData,       setQrData]       = useState(null);
 
   const fetchPoints = useCallback(async () => {
     if (!address) return;
@@ -44,6 +47,77 @@ export function PatientView() {
     return () => clearInterval(interval);
   }, [fetchPoints]);
 
+  // ── Canje directo via MetaMask ──────────────────────────────────────────────
+  const handleRedeem = async () => {
+    const amt = Number(redeemAmt);
+    if (!amt || amt <= 0) {
+      toast.error("Ingresá una cantidad válida de puntos");
+      return;
+    }
+    if (points !== null && amt > points) {
+      toast.error(`Saldo insuficiente (tenés ${points} WP)`);
+      return;
+    }
+    if (!CONTRACT_ADDRESS) {
+      toast.error("VITE_CONTRACT_ADDRESS no configurado");
+      return;
+    }
+    if (!window.ethereum) {
+      toast.error("MetaMask no detectado");
+      return;
+    }
+
+    setRedeeming(true);
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer   = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, WaitRewardABI, signer);
+
+      const pointsWei = ethers.parseEther(String(amt));
+
+      toast("Confirmá la transacción en MetaMask…", { icon: "🦊" });
+      const tx      = await contract.redeemPoints(commerce, pointsWei);
+      toast("Transacción enviada, esperando confirmación…", { icon: "⏳" });
+      const receipt = await tx.wait();
+
+      toast.success(`Canjeaste ${amt} WP exitosamente`);
+
+      // Refresco de saldo
+      await fetchPoints();
+      setRedeemAmt("");
+
+      // Mostrar link a Snowtrace
+      const explorerUrl = `https://testnet.snowtrace.io/tx/${receipt.hash}`;
+      toast(
+        (t) => (
+          <span>
+            Tx confirmada{" "}
+            <a href={explorerUrl} target="_blank" rel="noopener noreferrer"
+               className="underline text-primary" onClick={() => toast.dismiss(t.id)}>
+              ver en Snowtrace ↗
+            </a>
+          </span>
+        ),
+        { duration: 8000 }
+      );
+    } catch (err) {
+      if (err.code === 4001 || err.code === "ACTION_REJECTED") {
+        toast.error("Transacción rechazada");
+      } else if (err.message?.includes("Insufficient balance")) {
+        toast.error("Saldo de WRT insuficiente");
+      } else if (err.message?.includes("Commerce not active")) {
+        toast.error("El comercio no está activo");
+      } else if (err.message?.includes("Commerce has insufficient deposit")) {
+        toast.error("El comercio no tiene fondos suficientes");
+      } else {
+        toast.error(err.reason || err.message || "Error en el canje");
+      }
+    } finally {
+      setRedeeming(false);
+    }
+  };
+
+  // ── Generar QR (alternativa al canje directo) ─────────────────────────────
   const handleQR = () => {
     const amt = Number(redeemAmt);
     if (!amt || amt <= 0) {
@@ -165,9 +239,27 @@ export function PatientView() {
           </select>
         </div>
 
+        {/* Canje directo via MetaMask */}
+        <button
+          onClick={handleRedeem}
+          disabled={redeeming || !redeemAmt}
+          className="w-full py-4 rounded-full bg-primary text-white font-bold text-base disabled:opacity-60 flex items-center justify-center gap-2 active:scale-95 transition-transform"
+        >
+          {redeeming ? (
+            <>
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Canjeando…
+            </>
+          ) : (
+            "Canjear con MetaMask"
+          )}
+        </button>
+
+        {/* QR como alternativa */}
         <button
           onClick={handleQR}
-          className="w-full py-4 rounded-full bg-primary text-white font-bold text-base active:scale-95 transition-transform"
+          disabled={!redeemAmt}
+          className="w-full py-3 rounded-full border-2 border-primary text-primary font-bold text-sm disabled:opacity-40 active:scale-95 transition-transform"
         >
           Generar QR 📲
         </button>
