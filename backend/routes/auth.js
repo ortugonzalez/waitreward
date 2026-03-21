@@ -12,7 +12,7 @@ router.post('/login', async (req, res) => {
     })
 
     const { data, error } = await supabase
-      .from('users')
+      .from('wr_users')
       .select('*')
       .eq('dni', dni)
       .single()
@@ -24,7 +24,6 @@ router.post('/login', async (req, res) => {
       })
     }
 
-    // Token simple para el demo (base64 del dni+role)
     const token = Buffer.from(JSON.stringify({
       dni: data.dni,
       role: data.role,
@@ -42,9 +41,7 @@ router.post('/login', async (req, res) => {
       token
     })
   } catch (err) {
-    return res.status(500).json({
-      success: false, message: 'Error interno'
-    })
+    return res.status(500).json({ success: false, message: 'Error interno' })
   }
 })
 
@@ -59,7 +56,7 @@ router.get('/me', async (req, res) => {
     const decoded = JSON.parse(Buffer.from(token, 'base64').toString())
 
     const { data } = await supabase
-      .from('users')
+      .from('wr_users')
       .select('*')
       .eq('dni', decoded.dni)
       .single()

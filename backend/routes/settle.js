@@ -96,7 +96,7 @@ router.post("/", async (req, res, next) => {
     };
 
     // ── Persistir en Supabase (non-blocking — si falla, no afecta la tx) ────────
-    supabase.from('appointments').insert({
+    supabase.from('wr_appointments').insert({
       appointment_id: appointmentId,
       patient_wallet: patientWallet,
       delay_minutes: Number(delayMinutes),
