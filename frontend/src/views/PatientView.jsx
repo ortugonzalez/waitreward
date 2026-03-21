@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
 import toast from "react-hot-toast";
 import { QRCodeSVG } from "qrcode.react";
-import { getPoints } from "../api/client";
+import { getPoints, getPatientHistory } from "../api/client";
 
 async function subscribeToNotifications(wallet) {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
@@ -51,6 +51,10 @@ export function PatientView({ session, onLogout }) {
   const [queue, setQueue] = useState(null);
   const [queueLoading, setQueueLoading] = useState(false);
 
+  // ── History state ──────────────────────────────────────────────────────────
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
   const fetchPoints = useCallback(async () => {
     if (!session?.wallet) { setLoadingPts(false); return; }
     setLoadingPts(true);
@@ -86,10 +90,24 @@ export function PatientView({ session, onLogout }) {
     }
   }, []);
 
+  const fetchHistory = useCallback(async () => {
+    if (!session?.wallet) return;
+    setHistoryLoading(true);
+    try {
+      const data = await getPatientHistory(session.wallet.toLowerCase());
+      setHistory(Array.isArray(data) ? data : []);
+    } catch {
+      setHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [session?.wallet]);
+
   useEffect(() => {
     fetchPoints();
     fetchCatalog();
     fetchQueue();
+    fetchHistory();
     const interval = setInterval(fetchPoints, 15_000);
     const queueInterval = setInterval(fetchQueue, 60_000);
     if (session?.wallet) subscribeToNotifications(session.wallet);
@@ -97,7 +115,7 @@ export function PatientView({ session, onLogout }) {
       clearInterval(interval);
       clearInterval(queueInterval);
     };
-  }, [fetchPoints, fetchCatalog, fetchQueue]);
+  }, [fetchPoints, fetchCatalog, fetchQueue, fetchHistory]);
 
   const handleRedeem = async (item) => {
     if (!session?.wallet) return toast.error("Sesión no válida");
@@ -304,6 +322,70 @@ export function PatientView({ session, onLogout }) {
                         <span className="text-[10px] text-gray-500 text-center font-bold">Faltan {missing} WP</span>
                       </div>
                     )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Mi historial */}
+      <div>
+        <h3 className="font-bold text-[#1A1A2E] text-lg mb-1 px-1">Mi historial</h3>
+        <p className="text-[13px] text-gray-500 mb-4 px-1">Turnos registrados en blockchain</p>
+
+        {historyLoading ? (
+          <div className="flex justify-center py-6">
+            <div className="w-6 h-6 border-2 border-[#7F77DD] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : history.length === 0 ? (
+          <div className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 text-center">
+            <p className="text-sm text-gray-400">Sin turnos registrados aún</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {history.map((h, i) => {
+              const severityColors = {
+                on_time:     "bg-[#22C55E]/10 text-[#22C55E]",
+                minor:       "bg-yellow-100 text-yellow-700",
+                moderate:    "bg-orange-100 text-orange-700",
+                significant: "bg-red-100 text-red-600",
+              };
+              const severityLabels = {
+                on_time: "Puntual", minor: "Leve", moderate: "Moderada", significant: "Severa",
+              };
+              const dateStr = h.createdAt
+                ? new Date(h.createdAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })
+                : "—";
+              const snowtrace = h.txHash
+                ? `https://testnet.snowtrace.io/tx/${h.txHash}`
+                : null;
+
+              return (
+                <div key={i} className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-4 flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[13px] font-black text-[#1A1A2E]">{h.appointmentId}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${severityColors[h.severity] || "bg-gray-100 text-gray-500"}`}>
+                        {severityLabels[h.severity] || h.severity}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-400">{dateStr} · {h.delayMinutes} min demora</p>
+                    {snowtrace && (
+                      <a
+                        href={snowtrace}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] text-[#7F77DD] font-bold mt-1 inline-block hover:underline"
+                      >
+                        Ver en Snowtrace →
+                      </a>
+                    )}
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <span className="text-[17px] font-black text-[#7F77DD]">+{h.pointsAwarded}</span>
+                    <p className="text-[10px] text-gray-400 font-bold">WP</p>
                   </div>
                 </div>
               );

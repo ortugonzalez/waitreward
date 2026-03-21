@@ -30,3 +30,18 @@ export const getAIPrediction = (clinicId, specialist) =>
 export const getAIMetrics = (clinicId) =>
   request(`/api/ai/metrics/${encodeURIComponent(clinicId)}`);
 
+// Historial del paciente
+export const getPatientHistory = (wallet) =>
+  fetch(`${BASE}/api/history/patient/${wallet}`).then((r) => r.json());
+
+export const getPatientSummary = (wallet) =>
+  fetch(`${BASE}/api/history/patient/${wallet}/summary`).then((r) => r.json());
+
+// Verificación del contrato
+export const verifyContract = () =>
+  fetch(`${BASE}/api/contract/verify`).then((r) => r.json());
+
+// Descargar reporte PDF
+export const downloadReport = () =>
+  window.open(`${BASE}/api/reports/clinic/pdf`, "_blank");
+
