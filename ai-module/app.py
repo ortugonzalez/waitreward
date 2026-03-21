@@ -109,6 +109,6 @@ def queue_status(clinic_id):
     }), 200
 
 if __name__ == '__main__':
-    port = int(os.getenv('AI_PORT', 5000))
-    print(f"AI Module running on http://localhost:{port}")
-    app.run(debug=True, port=port)
+    port = int(os.environ.get('PORT', 5000))
+    print(f"AI Module running on http://0.0.0.0:{port}")
+    app.run(host='0.0.0.0', port=port, debug=False)
