@@ -91,5 +91,5 @@ def pattern_analysis():
 
 if __name__ == '__main__':
     port = int(os.getenv('AI_PORT', 5000))
-    print(f"🤖 AI Module running on http://localhost:{port}")
+    print(f"AI Module running on http://localhost:{port}")
     app.run(debug=True, port=port)
