@@ -31,9 +31,14 @@ export function PatientView() {
     if (!address) return;
     setLoadingPts(true);
     try {
-      const data = await getPoints(address);
+      // Checksum address to ensure correct format for backend
+      const checksummed = ethers.getAddress(address);
+      console.log("[WaitReward] Fetching points for:", checksummed);
+      const data = await getPoints(checksummed);
+      console.log("[WaitReward] Points response:", data);
       setPoints(data.points ?? 0);
-    } catch {
+    } catch (err) {
+      console.error("[WaitReward] Error fetching points:", err);
       toast.error("No se pudo obtener el saldo");
     } finally {
       setLoadingPts(false);

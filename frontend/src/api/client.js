@@ -23,3 +23,10 @@ export const redeem = (body) =>
 
 export const getCommerce = (address) =>
   request(`/api/commerce/${address}`);
+
+export const getAIPrediction = (clinicId, specialist) =>
+  request(`/api/ai/predict/${encodeURIComponent(clinicId)}/${encodeURIComponent(specialist)}`);
+
+export const getAIMetrics = (clinicId) =>
+  request(`/api/ai/metrics/${encodeURIComponent(clinicId)}`);
+

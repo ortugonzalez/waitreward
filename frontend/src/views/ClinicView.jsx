@@ -1,10 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import { settle } from "../api/client";
+import { settle, getAIPrediction } from "../api/client";
 import { PointsBadge } from "../components/PointsBadge";
 
 const HISTORY_KEY = "wr_clinic_history";
-const MAX_HISTORY  = 5;
+const MAX_HISTORY = 5;
+
+const SPECIALISTS = [
+  { id: "cardiologia", label: "Cardiología", icon: "❤️" },
+  { id: "dermatologia", label: "Dermatología", icon: "🩺" },
+  { id: "traumatologia", label: "Traumatología", icon: "🦴" },
+  { id: "pediatria", label: "Pediatría", icon: "👶" },
+  { id: "clinica_general", label: "Clínica general", icon: "🏥" },
+  { id: "oftalmologia", label: "Oftalmología", icon: "👁️" },
+];
 
 function loadHistory() {
   try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
@@ -16,36 +25,77 @@ function saveHistory(history) {
 }
 
 function toLocalDateTimeValue(date = new Date()) {
-  // Formato: "YYYY-MM-DDTHH:mm" para input datetime-local
   const pad = (n) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 export function ClinicView() {
   const [form, setForm] = useState({
-    appointmentId:      "",
-    patientWallet:      "",
-    scheduledDatetime:  toLocalDateTimeValue(),
-    actualDatetime:     toLocalDateTimeValue(),
+    appointmentId: "",
+    patientWallet: "",
+    scheduledDatetime: toLocalDateTimeValue(),
+    actualDatetime: toLocalDateTimeValue(),
   });
-  const [loading,  setLoading]  = useState(false);
-  const [result,   setResult]   = useState(null);
-  const [history,  setHistory]  = useState(loadHistory);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [history, setHistory] = useState(loadHistory);
+
+  // IA Prediction state
+  const [selectedSpecialist, setSelectedSpecialist] = useState("");
+  const [prediction, setPrediction] = useState(null);
+  const [predictionLoading, setPredictionLoading] = useState(false);
+  const [predictionError, setPredictionError] = useState(null);
 
   const handleChange = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
+  // ── Fetch AI prediction when specialist changes ─────────────────────────────
+  useEffect(() => {
+    if (!selectedSpecialist) {
+      setPrediction(null);
+      setPredictionError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setPredictionLoading(true);
+    setPrediction(null);
+    setPredictionError(null);
+
+    getAIPrediction("clinica-demo", selectedSpecialist)
+      .then((data) => {
+        if (!cancelled) {
+          setPrediction(data);
+          setPredictionLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error("[WaitReward] AI prediction error:", err);
+          if (err.message?.includes("503") || err.message?.includes("no disponible")) {
+            setPredictionError("Módulo de IA no disponible. Iniciá el servidor Flask (ai-module).");
+          } else {
+            setPredictionError(err.message || "Error al obtener predicción");
+          }
+          setPredictionLoading(false);
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [selectedSpecialist]);
+
+  // ── Submit appointment ──────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     const { appointmentId, patientWallet, scheduledDatetime, actualDatetime } = form;
 
     if (!appointmentId.trim()) return toast.error("Ingresá el ID del turno");
     if (!patientWallet.trim()) return toast.error("Ingresá la wallet del paciente");
-    if (!scheduledDatetime)    return toast.error("Ingresá la hora programada");
-    if (!actualDatetime)       return toast.error("Ingresá la hora real de atención");
+    if (!scheduledDatetime) return toast.error("Ingresá la hora programada");
+    if (!actualDatetime) return toast.error("Ingresá la hora real de atención");
 
     const scheduled = Math.floor(new Date(scheduledDatetime).getTime() / 1000);
-    const actual    = Math.floor(new Date(actualDatetime).getTime()    / 1000);
+    const actual = Math.floor(new Date(actualDatetime).getTime() / 1000);
 
     if (actual < scheduled) {
       return toast.error("La hora real no puede ser anterior a la programada");
@@ -59,25 +109,23 @@ export function ClinicView() {
         appointmentId,
         patientWallet,
         scheduledTimestamp: scheduled,
-        actualTimestamp:    actual,
+        actualTimestamp: actual,
       });
 
       setResult(data);
       toast.success("Turno registrado exitosamente");
 
-      // Guardar en historial
       const entry = {
-        id:           appointmentId,
+        id: appointmentId,
         delayMinutes: data.delayMinutes,
-        points:       Number(data.pointsAwarded),
-        txHash:       data.txHash,
-        time:         new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
+        points: Number(data.pointsAwarded),
+        txHash: data.txHash,
+        time: new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
       };
       const updated = [entry, ...history].slice(0, MAX_HISTORY);
       setHistory(updated);
       saveHistory(updated);
 
-      // Resetear formulario
       setForm((f) => ({ ...f, appointmentId: "", patientWallet: "" }));
     } catch (err) {
       toast.error(err.message || "Error al registrar el turno");
@@ -88,6 +136,87 @@ export function ClinicView() {
 
   return (
     <div className="flex flex-col gap-4 px-4">
+      {/* IA Prediction */}
+      <div className="bg-white rounded-card shadow-sm p-5 flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">🤖</span>
+          <h2 className="font-bold text-ink text-base">Predicción de demora (IA)</h2>
+        </div>
+        <p className="text-xs text-gray-500">
+          Seleccioná una especialidad para ver la demora estimada por nuestro modelo predictivo
+        </p>
+
+        <div className="grid grid-cols-3 gap-2">
+          {SPECIALISTS.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setSelectedSpecialist(prev => prev === s.id ? "" : s.id)}
+              className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-xs font-medium transition-all active:scale-95 ${selectedSpecialist === s.id
+                  ? "bg-primary text-white shadow-md"
+                  : "bg-surface text-gray-600 hover:bg-gray-100"
+                }`}
+            >
+              <span className="text-lg">{s.icon}</span>
+              <span className="truncate w-full text-center">{s.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Prediction result */}
+        {predictionLoading && (
+          <div className="flex items-center justify-center py-4">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm text-gray-500 ml-2">Analizando datos…</span>
+          </div>
+        )}
+
+        {predictionError && (
+          <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 flex items-start gap-2">
+            <span className="text-orange-500 text-sm">⚠️</span>
+            <p className="text-xs text-orange-700">{predictionError}</p>
+          </div>
+        )}
+
+        {prediction && !predictionLoading && (
+          <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-4 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500">Demora estimada</p>
+                <div className="flex items-baseline gap-1 mt-1">
+                  <span className="text-3xl font-black text-primary">
+                    {prediction.predicted_delay_minutes ?? prediction.predicted_delay ?? "—"}
+                  </span>
+                  <span className="text-sm font-semibold text-gray-500">minutos</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-500">Confianza</p>
+                <span className="text-xl font-bold text-ink mt-1 block">
+                  {Math.round((prediction.confidence ?? 0) * 100)}%
+                </span>
+              </div>
+            </div>
+
+            {/* Confidence bar */}
+            <div>
+              <div className="w-full h-2 bg-white rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all"
+                  style={{ width: `${(prediction.confidence ?? 0) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            {prediction.sample_size && (
+              <p className="text-xs text-gray-500">
+                Basado en <strong>{prediction.sample_size}</strong> turnos históricos ·{" "}
+                {SPECIALISTS.find(s => s.id === selectedSpecialist)?.label ?? selectedSpecialist}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Formulario */}
       <form onSubmit={handleSubmit} className="bg-white rounded-card shadow-sm p-5 flex flex-col gap-4">
         <h2 className="font-bold text-ink text-base">Registrar atención</h2>
