@@ -1,18 +1,19 @@
 require("dotenv").config();
 
 const express = require("express");
-const cors    = require("cors");
+const cors = require("cors");
 
 // ── Instancia del contrato (falla temprano si faltan env vars) ────────────────
 require("./lib/contract");
 
-const settleRouter   = require("./routes/settle");
-const pointsRouter   = require("./routes/points");
-const redeemRouter   = require("./routes/redeem");
+const settleRouter = require("./routes/settle");
+const pointsRouter = require("./routes/points");
+const redeemRouter = require("./routes/redeem");
 const commerceRouter = require("./routes/commerce");
-const aiRouter       = require("./routes/ai");
+const aiRouter = require("./routes/ai");
+const patientsRouter = require("./routes/patients");
 
-const app  = express();
+const app = express();
 const PORT = process.env.PORT || 3001;
 
 // ── Middleware ────────────────────────────────────────────────────────────────
@@ -40,11 +41,12 @@ app.get("/health", (_req, res) => {
 });
 
 // ── Rutas ─────────────────────────────────────────────────────────────────────
-app.use("/api/settle",   settleRouter);
-app.use("/api/points",   pointsRouter);
-app.use("/api/redeem",   redeemRouter);
+app.use("/api/settle", settleRouter);
+app.use("/api/points", pointsRouter);
+app.use("/api/redeem", redeemRouter);
 app.use("/api/commerce", commerceRouter);
-app.use("/api/ai",       aiRouter);
+app.use("/api/ai", aiRouter);
+app.use("/api/patients", patientsRouter);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => {

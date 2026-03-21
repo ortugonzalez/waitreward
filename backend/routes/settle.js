@@ -1,19 +1,24 @@
 const { Router } = require("express");
-const { ethers }  = require("ethers");
+const { ethers } = require("ethers");
 const { contractClinic, contractRead } = require("../lib/contract");
+const { PATIENTS } = require("../lib/patients");
 
 const router = Router();
 
 /**
  * POST /api/settle
- * body: { appointmentId, patientWallet, scheduledTimestamp, actualTimestamp }
+ * body: { appointmentId, patientWallet (or dni), scheduledTimestamp, actualTimestamp }
  *
  * appointmentId  → string (ej. "clinic-001-20240320") se convierte a bytes32
  * scheduledTimestamp / actualTimestamp → unix seconds (número o string)
  */
 router.post("/", async (req, res, next) => {
   try {
-    const { appointmentId, patientWallet, scheduledTimestamp, actualTimestamp } = req.body;
+    let { appointmentId, patientWallet, dni, scheduledTimestamp, actualTimestamp } = req.body;
+
+    if (dni && PATIENTS[dni]) {
+      patientWallet = PATIENTS[dni].wallet;
+    }
 
     // ── Validación de campos ───────────────────────────────────────────────
     if (!appointmentId || !patientWallet || scheduledTimestamp == null || actualTimestamp == null) {
@@ -31,7 +36,7 @@ router.post("/", async (req, res, next) => {
     }
 
     const scheduled = BigInt(scheduledTimestamp);
-    const actual    = BigInt(actualTimestamp);
+    const actual = BigInt(actualTimestamp);
 
     if (actual < scheduled) {
       return res.status(400).json({
@@ -71,11 +76,11 @@ router.post("/", async (req, res, next) => {
       try {
         const parsed = iface.parseLog(log);
         if (parsed && parsed.name === "AppointmentSettled") {
-          delayMinutes  = parsed.args.delayMinutes;
+          delayMinutes = parsed.args.delayMinutes;
           pointsAwarded = parsed.args.pointsAwarded;
           break;
         }
-      } catch (_) {}
+      } catch (_) { }
     }
 
     return res.json({
