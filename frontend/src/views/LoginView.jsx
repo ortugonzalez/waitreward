@@ -197,6 +197,15 @@ export function LoginView({ onLogin, onBack }) {
                 ))}
               </div>
             </div>
+
+            {role.id === "patient" && (
+              <div className="bg-gradient-to-r from-[#7F77DD]/10 to-[#9B8FE8]/20 rounded-[16px] p-4 border border-[#7F77DD]/20 flex items-center gap-3 shadow-sm">
+                <span className="text-2xl">💎</span>
+                <p className="text-[12px] font-medium text-[#1A1A2E] leading-tight">
+                  ¿Sabías que podés llegar a <span className="font-black text-[#7F77DD]">Premium</span> acumulando WaitPoints en cada visita médica?
+                </p>
+              </div>
+            )}
           </form>
         )}
       </div>

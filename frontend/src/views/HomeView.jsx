@@ -38,12 +38,35 @@ export function HomeView({ setActiveTab }) {
   const [mounted, setMounted] = useState(false);
   const deferredPrompt = useRef(null);
 
+  const [levels, setLevels] = useState([
+    { name: "Bronce", emoji: "🥉", color: "#B08D57", minPoints: 0, perks: ["Catálogo básico"] },
+    { name: "Plata", emoji: "🥈", color: "#C0C0C0", minPoints: 101, perks: ["Prioridad de canje"] },
+    { name: "Oro", emoji: "🥇", color: "#FFD700", minPoints: 301, perks: ["Comercios exclusivos"] },
+    { name: "Premium", emoji: "💎", color: "#7F77DD", minPoints: 601, perks: ["Beneficios VIP"] }
+  ]);
+  const [userLevel, setUserLevel] = useState(null);
+
   useEffect(() => {
     setMounted(true);
     fetch(`${API_URL}/api/rewards/commerces`)
       .then((r) => r.json())
       .then((d) => { if (d.success) setCommerces(d.commerces); })
       .catch(() => { });
+
+    fetch(`${API_URL}/api/rewards/levels`)
+      .then((r) => r.json())
+      .then((d) => { if (d.success && d.levels) setLevels(d.levels); })
+      .catch(() => { });
+
+    try {
+      const session = JSON.parse(localStorage.getItem("wr_session") || "{}");
+      if (session?.wallet) {
+        fetch(`${API_URL}/api/points/${session.wallet}`)
+          .then((r) => r.json())
+          .then((d) => { if (d.level) setUserLevel(d.level.name); })
+          .catch(() => { });
+      }
+    } catch { }
   }, []);
 
   // ── Capture install prompt ─────────────────────────────────────────────────
@@ -128,6 +151,45 @@ export function HomeView({ setActiveTab }) {
             </button>
           </div>
         )}
+
+        {/* Niveles de membresía */}
+        <div>
+          <h2 className="font-bold text-[#1A1A2E] text-lg mb-4 px-1">Niveles de membresía</h2>
+          <div className="flex overflow-x-auto pb-4 -mx-4 px-4 gap-3 snap-x hide-scrollbar">
+            {levels.map((lvl, i) => {
+              const isCurrent = userLevel === lvl.name;
+              return (
+                <div
+                  key={i}
+                  className={`snap-start shrink-0 w-[200px] rounded-[16px] p-4 flex flex-col gap-2 transition-all ${isCurrent ? 'border-2 shadow-[0_4px_16px_rgba(0,0,0,0.1)]' : 'border border-transparent bg-white shadow-[0_2px_8px_rgba(0,0,0,0.05)]'}`}
+                  style={{
+                    borderColor: isCurrent ? lvl.color : 'transparent',
+                    backgroundColor: isCurrent ? `${lvl.color}15` : 'white'
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-3xl">{lvl.emoji}</span>
+                    <div className="flex flex-col">
+                      <span className="font-black text-[#1A1A2E] leading-tight">{lvl.name}</span>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{lvl.minPoints > 0 ? `${lvl.minPoints}+ WP` : '0-100 WP'}</span>
+                    </div>
+                  </div>
+                  {isCurrent && (
+                    <span className="text-[10px] font-bold text-white bg-[#22C55E] px-2 py-0.5 rounded-full inline-flex w-max mb-1 items-center gap-1 shadow-sm">
+                      ✨ Tu nivel actual
+                    </span>
+                  )}
+                  <div className="mt-1">
+                    <p className="text-[13px] font-medium text-gray-600 flex items-start gap-1.5 leading-tight">
+                      <span className="font-bold shrink-0" style={{ color: lvl.color }}>✓</span>
+                      {lvl.perks?.[0] || "Beneficios exclusivos"}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Catálogo — cards clickeables */}
         <div>

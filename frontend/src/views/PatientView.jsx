@@ -43,6 +43,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export function PatientView({ session, onLogout }) {
   const [points, setPoints] = useState(null);
+  const [levelInfo, setLevelInfo] = useState(null);
   const [loadingPts, setLoadingPts] = useState(true);
   const [catalog, setCatalog] = useState([]);
   const [qrModal, setQrModal] = useState(null);
@@ -62,7 +63,8 @@ export function PatientView({ session, onLogout }) {
       const checksummed = ethers.getAddress(session.wallet);
       const data = await getPoints(checksummed);
       setPoints(data.points ?? 0);
-    } catch { setPoints(0); }
+      setLevelInfo(data);
+    } catch { setPoints(0); setLevelInfo(null); }
     finally { setLoadingPts(false); }
   }, [session?.wallet]);
 
@@ -148,11 +150,7 @@ export function PatientView({ session, onLogout }) {
     }
   };
 
-  // Logic for level progress
   const currentPts = points ?? 0;
-  const nextLevels = [30, 100, 300, 500, 1000];
-  const nextLevel = nextLevels.find(l => l > currentPts) || 1000;
-  const progressPercent = Math.min(100, Math.max(0, (currentPts / nextLevel) * 100));
 
   return (
     <div className="flex flex-col gap-6 px-4 bg-[#F8F7FF] min-h-screen text-[#1A1A2E] font-sans pb-8">
@@ -191,23 +189,51 @@ export function PatientView({ session, onLogout }) {
             <span className="inline-block bg-[#22C55E]/10 text-[#22C55E] font-black text-sm px-4 py-1.5 rounded-[8px] mt-3">
               = ${(currentPts / 100).toFixed(2)} en descuentos
             </span>
-
-            {/* Progress bar */}
-            <div className="w-full mt-6 flex flex-col gap-2 relative z-10">
-              <div className="flex justify-between text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                <span>Nivel actual</span>
-                <span>Faltan {nextLevel - currentPts} WP</span>
-              </div>
-              <div className="w-full h-3 bg-[#F8F7FF] rounded-full overflow-hidden shadow-inner">
-                <div
-                  className="h-full bg-gradient-to-r from-[#7F77DD] to-[#9B8FE8] transition-all duration-1000 ease-out rounded-full"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            </div>
           </>
         )}
       </div>
+
+      {/* Level Card */}
+      {levelInfo && levelInfo.level && (
+        <div
+          className="rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 flex flex-col gap-3 relative overflow-hidden"
+          style={{ backgroundColor: `${levelInfo.level.color}15`, border: `1px solid ${levelInfo.level.color}30` }}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-4xl">{levelInfo.level.emoji}</span>
+            <div>
+              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Membresía</p>
+              <p className="text-xl font-black text-[#1A1A2E] leading-none mt-1">{levelInfo.level.name}</p>
+            </div>
+          </div>
+
+          {levelInfo.level.perks && levelInfo.level.perks.length > 0 && (
+            <div className="flex flex-col gap-1 mt-2">
+              {levelInfo.level.perks.map((perk, i) => (
+                <div key={i} className="flex items-start gap-2 text-[13px] font-medium text-[#1A1A2E]">
+                  <span className="text-[#22C55E]">✓</span>
+                  <span>{perk}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {levelInfo.nextLevel && (
+            <div className="w-full mt-3 flex flex-col gap-1.5 relative z-10 pt-3 border-t border-black/5">
+              <div className="flex justify-between text-[11px] font-bold text-gray-500 tracking-wide">
+                <span>{levelInfo.nextLevel.progressPercent}% hacia {levelInfo.nextLevel.name} {levelInfo.nextLevel.emoji}</span>
+                <span>Faltan {levelInfo.nextLevel.pointsNeeded} WP</span>
+              </div>
+              <div className="w-full h-2.5 bg-white/50 rounded-full overflow-hidden shadow-inner">
+                <div
+                  className="h-full transition-all duration-1000 ease-out rounded-full"
+                  style={{ width: `${levelInfo.nextLevel.progressPercent}%`, backgroundColor: levelInfo.level.color }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Cola en tiempo real */}
       <div className="bg-[#F8F7FF] border-l-4 border-[#7F77DD] rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 flex flex-col gap-4 relative overflow-hidden bg-white">
@@ -347,9 +373,9 @@ export function PatientView({ session, onLogout }) {
           <div className="flex flex-col gap-2">
             {history.map((h, i) => {
               const severityColors = {
-                on_time:     "bg-[#22C55E]/10 text-[#22C55E]",
-                minor:       "bg-yellow-100 text-yellow-700",
-                moderate:    "bg-orange-100 text-orange-700",
+                on_time: "bg-[#22C55E]/10 text-[#22C55E]",
+                minor: "bg-yellow-100 text-yellow-700",
+                moderate: "bg-orange-100 text-orange-700",
                 significant: "bg-red-100 text-red-600",
               };
               const severityLabels = {
