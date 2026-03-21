@@ -15,6 +15,7 @@ const patientsRouter = require("./routes/patients");
 const authRouter = require("./routes/auth");
 const rewardsRouter = require("./routes/rewards");
 const pushRouter = require("./routes/push");
+const analyticsRouter = require("./routes/analytics");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -53,6 +54,7 @@ app.use("/api/patients", patientsRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/rewards", rewardsRouter);
 app.use("/api/push", pushRouter);
+app.use("/api/analytics", analyticsRouter);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => {

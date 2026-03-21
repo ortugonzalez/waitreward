@@ -49,6 +49,10 @@ export function PatientView({ session, onLogout }) {
   const [qrModal, setQrModal]       = useState(null);
   const [generatingFor, setGeneratingFor] = useState(null);
 
+  // ── Queue state ────────────────────────────────────────────────────────────
+  const [queue, setQueue]           = useState(null);
+  const [queueLoading, setQueueLoading] = useState(false);
+
   // ── Fetch on-chain points ──────────────────────────────────────────────────
   const fetchPoints = useCallback(async () => {
     if (!session?.wallet) { setLoadingPts(false); return; }
@@ -69,14 +73,31 @@ export function PatientView({ session, onLogout }) {
     } catch {}
   }, []);
 
+  const fetchQueue = useCallback(async () => {
+    setQueueLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/ai/queue/clinica-demo`);
+      const data = await res.json();
+      setQueue(data);
+    } catch {
+      setQueue({ patients_ahead: 4, estimated_wait_minutes: 35, confidence: 0.75, last_updated: "hace 2 minutos", _source: "mock" });
+    } finally {
+      setQueueLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchPoints();
     fetchCatalog();
+    fetchQueue();
     const interval = setInterval(fetchPoints, 15_000);
-    // Subscribe to push notifications (asks permission once)
+    const queueInterval = setInterval(fetchQueue, 60_000);
     if (session?.wallet) subscribeToNotifications(session.wallet);
-    return () => clearInterval(interval);
-  }, [fetchPoints, fetchCatalog]);
+    return () => {
+      clearInterval(interval);
+      clearInterval(queueInterval);
+    };
+  }, [fetchPoints, fetchCatalog, fetchQueue]);
 
   // ── Generar QR para un beneficio ───────────────────────────────────────────
   const handleRedeem = async (item) => {
@@ -143,6 +164,52 @@ export function PatientView({ session, onLogout }) {
             </>
           )}
         </div>
+      </div>
+
+      {/* Cola en tiempo real */}
+      <div className="bg-white rounded-card shadow-sm p-5 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🏥</span>
+            <h3 className="font-bold text-ink text-base">Tu turno en tiempo real</h3>
+          </div>
+          <button
+            onClick={fetchQueue}
+            disabled={queueLoading}
+            className="text-xs text-primary font-semibold disabled:opacity-40 active:scale-95 transition-transform"
+          >
+            {queueLoading ? "…" : "Actualizar"}
+          </button>
+        </div>
+
+        {queueLoading && !queue ? (
+          <div className="flex justify-center py-3">
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : queue ? (
+          <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-4 flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">👥</span>
+              <div>
+                <p className="text-base font-black text-ink">
+                  {queue.patients_ahead} pacientes delante tuyo
+                </p>
+                <p className="text-xs text-gray-400">en la clínica ahora mismo</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">⏱️</span>
+              <div>
+                <p className="text-base font-black text-ink">
+                  Demora estimada: {queue.estimated_wait_minutes} min
+                </p>
+                <p className="text-xs text-gray-400">
+                  Confianza: {Math.round((queue.confidence ?? 0) * 100)}% · {queue.last_updated}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {/* Catálogo de beneficios */}

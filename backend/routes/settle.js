@@ -3,16 +3,15 @@ const { ethers } = require("ethers");
 const { contractClinic, contractRead } = require("../lib/contract");
 const { PATIENTS } = require("../lib/patients");
 const { supabase } = require("../lib/supabase");
-const { sendPushToWallet } = require("../lib/push");
+const { sendPushToWallet, notifyPatientTurnApproaching } = require("../lib/push");
 
 const router = Router();
+
+const AI_URL = process.env.AI_URL || "http://localhost:5000";
 
 /**
  * POST /api/settle
  * body: { appointmentId, patientWallet (or dni), scheduledTimestamp, actualTimestamp }
- *
- * appointmentId  → string (ej. "clinic-001-20240320") se convierte a bytes32
- * scheduledTimestamp / actualTimestamp → unix seconds (número o string)
  */
 router.post("/", async (req, res, next) => {
   try {
@@ -47,8 +46,22 @@ router.post("/", async (req, res, next) => {
       });
     }
 
+    // ── Notificar al paciente que su turno se acerca (non-blocking) ────────
+    try {
+      const aiRes = await fetch(
+        `${AI_URL}/predict-delay/clinica-demo/clinica_general`
+      ).then((r) => r.json());
+      notifyPatientTurnApproaching(
+        patientWallet,
+        aiRes.predicted_delay || 25,
+        aiRes.patients_ahead || 3
+      ).catch(() => {});
+    } catch (_) {
+      // No bloquear si el módulo IA no está disponible
+    }
+
     // ── Convertir appointmentId a bytes32 ──────────────────────────────────
-    const apptId32 = ethers.id(String(appointmentId)); // keccak256 del string
+    const apptId32 = ethers.id(String(appointmentId));
 
     // ── Verificar que no esté ya procesado ─────────────────────────────────
     const alreadySettled = await contractRead.settledAppointments(apptId32);
@@ -82,7 +95,7 @@ router.post("/", async (req, res, next) => {
           pointsAwarded = parsed.args.pointsAwarded;
           break;
         }
-      } catch (_) { }
+      } catch (_) {}
     }
 
     const response = {
@@ -96,22 +109,27 @@ router.post("/", async (req, res, next) => {
       pointsAwardedRaw: pointsAwarded.toString(),
     };
 
-    // ── Persistir en Supabase (non-blocking — si falla, no afecta la tx) ────────
-    supabase.from('wr_appointments').insert({
-      appointment_id: appointmentId,
-      patient_wallet: patientWallet,
-      delay_minutes: Number(delayMinutes),
-      points_awarded: Number(ethers.formatEther(pointsAwarded)),
-      tx_hash: receipt.hash || receipt.transactionHash
-    }).then(() => {}).catch(e => console.error('[settle] Supabase log error:', e.message));
+    // ── Persistir en Supabase (non-blocking) ──────────────────────────────
+    supabase
+      .from("wr_appointments")
+      .insert({
+        appointment_id: appointmentId,
+        patient_wallet: patientWallet,
+        delay_minutes: Number(delayMinutes),
+        points_awarded: Number(ethers.formatEther(pointsAwarded)),
+        tx_hash: receipt.hash || receipt.transactionHash,
+      })
+      .then(() => {})
+      .catch((e) => console.error("[settle] Supabase log error:", e.message));
 
-    // ── Send push notification to patient (non-blocking) ──────────────────────
+    // ── Notificación de puntos ganados (non-blocking) ──────────────────────
     if (Number(pointsAwarded) > 0) {
       const pts = Math.round(parseFloat(ethers.formatEther(pointsAwarded)));
       const delay = Number(delayMinutes);
+      const discountARS = (pts / 100).toFixed(2);
       sendPushToWallet(patientWallet, {
-        title: "¡Recibiste WaitPoints! ⏱",
-        body: `Tu turno demoró ${delay} min. Recibiste ${pts} WaitPoints.`,
+        title: `¡Recibiste ${pts} WaitPoints! 🎉`,
+        body: `Te esperaste ${delay} min. Tenés $${discountARS} en descuentos disponibles.`,
         tag: `appt-${appointmentId}`,
         url: "/",
       }).catch(() => {});

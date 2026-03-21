@@ -48,4 +48,26 @@ router.get("/metrics/:clinicId", async (req, res, next) => {
   await proxyGet(`/clinic-metrics/${encodeURIComponent(clinicId)}`, res, next);
 });
 
+/**
+ * GET /api/ai/queue/:clinicId
+ * Estado de la cola en tiempo real.
+ */
+router.get("/queue/:clinicId", async (req, res) => {
+  try {
+    const response = await fetch(
+      `${AI_URL}/queue-status/${encodeURIComponent(req.params.clinicId)}`
+    );
+    const data = await response.json();
+    res.json(data);
+  } catch {
+    res.json({
+      patients_ahead: 4,
+      estimated_wait_minutes: 35,
+      confidence: 0.75,
+      last_updated: "hace 2 minutos",
+      _source: "mock",
+    });
+  }
+});
+
 module.exports = router;

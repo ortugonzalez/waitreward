@@ -31,7 +31,6 @@ async function sendPushToWallet(walletAddress, payload) {
     try {
       await webpush.sendNotification(row.subscription, payloadStr);
     } catch (err) {
-      // 410 Gone or 404 → subscription expired, remove it
       if (err.statusCode === 410 || err.statusCode === 404) {
         supabase.from("wr_push_subscriptions").delete().eq("id", row.id).then(() => {}).catch(() => {});
       } else {
@@ -41,4 +40,49 @@ async function sendPushToWallet(walletAddress, payload) {
   }
 }
 
-module.exports = { webpush, sendPushToWallet };
+/**
+ * Notify any active subscriber that their turn is approaching.
+ * Used as a demo signal before the on-chain settle.
+ * In production this would target the specific patient's wallet.
+ */
+async function notifyPatientTurnApproaching(patientWallet, minutesAhead, patientsAhead) {
+  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) return;
+
+  // Try to find subscription by wallet first
+  let rows = [];
+  try {
+    const { data } = await supabase
+      .from("wr_push_subscriptions")
+      .select("id, subscription")
+      .eq("wallet", patientWallet.toLowerCase());
+    rows = data || [];
+  } catch (_) {}
+
+  // Demo fallback: use any active subscription if patient not found
+  if (rows.length === 0) {
+    try {
+      const { data } = await supabase
+        .from("wr_push_subscriptions")
+        .select("id, subscription")
+        .limit(1);
+      rows = data || [];
+    } catch (_) {}
+  }
+
+  if (rows.length === 0) return;
+
+  const payload = JSON.stringify({
+    title: "Tu turno se acerca 🏥",
+    body: `Tenés ${patientsAhead} pacientes delante. Demora estimada: ${minutesAhead} min.`,
+    tag: "turn-approaching",
+    url: "/",
+  });
+
+  for (const row of rows) {
+    await webpush.sendNotification(row.subscription, payload).catch((e) =>
+      console.error("[push] approaching error:", e.message)
+    );
+  }
+}
+
+module.exports = { webpush, sendPushToWallet, notifyPatientTurnApproaching };
