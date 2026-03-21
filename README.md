@@ -1,257 +1,292 @@
-# ⏱ WaitReward — Medical Wait Time Rewards on Avalanche
+# WaitReward 🏥⏱️
+### Medical wait time transformed into real rewards — powered by Avalanche
 
-> **Turn wasted time into real value.** WaitReward compensates patients for medical appointment delays by issuing on-chain loyalty points redeemable at local businesses.
+> "The wait is inevitable. Now it's rewarded."
 
-[![Avalanche](https://img.shields.io/badge/Built%20on-Avalanche-E84142?style=flat-square&logo=avalanche)](https://www.avax.network/)
-[![Solidity](https://img.shields.io/badge/Solidity-0.8.20-363636?style=flat-square&logo=solidity)](https://soliditylang.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
-
----
-
-## 🏥 The Problem
-
-In Argentina, **waiting at the doctor** is the **#1 complaint** in the healthcare system:
-
-- **Average wait time: 45+ minutes** beyond the scheduled appointment
-- Clinics issue **overbooked slots** because public insurance pays significantly less than private patients
-- **No compensation** is ever given to the patient who waited
-- This is a systemic issue affecting **millions** of patients across LATAM
-
-Source: Argentina's SISA healthcare data, patient surveys, and public health reports.
+[![Avalanche Fuji](https://img.shields.io/badge/Avalanche-Fuji%20Testnet-E84142?logo=avalanche)](https://testnet.snowtrace.io/address/0xAad6125bE3E57473fb575af47c4B96253c1bEEEa)
+[![Contract Verified](https://img.shields.io/badge/Contract-Verified-22C55E)](https://testnet.snowtrace.io/address/0xAad6125bE3E57473fb575af47c4B96253c1bEEEa)
+[![PWA Ready](https://img.shields.io/badge/PWA-Ready-7F77DD)](https://github.com/ortugonzalez/waitreward)
 
 ---
 
-## 💡 The Solution
+## The Problem
 
-WaitReward creates a **trustless, blockchain-powered loyalty system** where:
+In Argentina, **wait time is the #1 complaint** in the healthcare system:
+- Average wait: **45+ minutes** beyond scheduled appointment time
+- **15M+ annual medical consultations** affected
+- Clinics overbook because health insurers (obras sociales) pay up to 3x less than private patients
+- **Zero compensation** for patients who wait
 
-1. 🏥 **Clinic registers** the actual attendance time via our platform
-2. ⏱ **Smart contract calculates** the delay automatically
-3. 🪙 **WaitPoints (WRT tokens)** are minted directly to the patient's wallet
-4. 🏪 **Patient redeems** points at partnered local businesses (pharmacies, cafés, etc.)
-5. 💰 **Commerce receives** customers and deposits funds to back the redemptions
+A single mid-size clinic loses ~$375,000 ARS/month in avoidable patient attrition due to poor wait experience.
 
-### Points Tiers (On-Chain)
+---
 
-| Delay | WaitPoints | USD Equivalent |
-|-------|-----------|----------------|
-| < 15 min | 0 WP | $0.00 |
-| 15-29 min | 50 WP | $0.50 |
-| 30-59 min | 150 WP | $1.50 |
+## Our Solution
+
+WaitReward is a **loyalty rewards protocol** that transforms medical wait time into real value. Think Starbucks Stars — but for healthcare.
+
+When a clinic runs late:
+1. 🏥 Clinic registers actual attendance time via API
+2. ⛓️ Smart contract calculates delay and **automatically mints WaitPoints (WRT tokens)** to the patient
+3. 🎁 Patient redeems points at partner businesses (pharmacies, cafés, psychology sessions)
+4. 💰 Commerce pays monthly membership — protocol earns 3% fee per redemption
+
+**No blockchain knowledge required** — patients see points, not wallets.
+
+---
+
+## How It Works
+
+### Point Tiers
+| Delay | WaitPoints | Value |
+|-------|-----------|-------|
+| < 15 min | 0 WP | — |
+| 15–29 min | 50 WP | $0.50 |
+| 30–59 min | 150 WP | $1.50 |
 | 60+ min | 300 WP | $3.00 |
 
-> **Exchange rate:** 100 WaitPoints = $1.00 (fixed in smart contract)
+### Membership Levels
+| Level | Points | Perks |
+|-------|--------|-------|
+| 🥉 Bronze | 0–100 | Basic catalog |
+| 🥈 Silver | 101–300 | Priority redemptions |
+| 🥇 Gold | 301–600 | Exclusive partners |
+| 💎 Premium | 600+ | VIP benefits |
+
+### Business Model
+| Revenue Source | Who Pays | Model |
+|---------------|----------|-------|
+| Monthly membership | Commerce | Fixed fee |
+| Protocol fee | Automatic | 3% per redemption |
+| Clinic subscription | Clinic | SaaS per size |
 
 ---
 
-## 🧠 AI-Powered Delay Prediction
+## Tech Stack
 
-WaitReward includes a **predictive AI module** that analyzes historical appointment data to:
+### Blockchain
+- **Smart Contract:** Solidity 0.8.20 + OpenZeppelin ERC-20
+- **Network:** Avalanche Fuji Testnet (chainId: 43113)
+- **Contract:** `0xAad6125bE3E57473fb575af47c4B96253c1bEEEa`
+- **Snowtrace:** https://testnet.snowtrace.io/address/0xAad6125bE3E57473fb575af47c4B96253c1bEEEa
+- **Tests:** Hardhat — 39/39 passing
+- **Token:** WRT (WaitReward Token) — ERC-20, minted on demand
 
-- **Predict expected delays** by specialty and clinic
-- **Provide confidence scores** for predictions
-- **Compute clinic-level metrics** (average delay, total appointments, trends)
+### Backend
+- **Runtime:** Node.js + Express
+- **Blockchain:** ethers.js v6
+- **Database:** Supabase (PostgreSQL, schema: waitreward)
+- **Push notifications:** web-push (VAPID)
+- **PDF reports:** pdfkit
 
-The AI module runs a scikit-learn model trained on synthetic data representative of real-world patterns. It provides predictions per specialty (e.g., Cardiology: 27 min, 78% confidence) and enables proactive patient notifications.
+### AI Module
+- **Runtime:** Python + Flask
+- **ML:** scikit-learn + numpy + pandas
+- **Features:** Delay prediction, queue status, pattern analysis, clinic metrics
+- **Endpoints:** predict-delay, queue-status, clinic-metrics, pattern-analysis
 
----
-
-## 🏗 Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| **Smart Contract** | Solidity 0.8.20 + OpenZeppelin ERC-20 |
-| **Blockchain** | Avalanche Fuji Testnet (chainId: 43113) |
-| **Contract Tests** | Hardhat (39/39 passing ✅) |
-| **Backend** | Node.js + Express + ethers.js v6 |
-| **Frontend** | React + Vite + TailwindCSS + ethers.js v6 |
-| **AI Module** | Flask + Python + scikit-learn + numpy + pandas |
-| **Wallet** | MetaMask |
-
----
-
-## 📝 Smart Contract
-
-**Deployed on Avalanche Fuji Testnet:**
-
-| | |
-|---|---|
-| **Contract Address** | `0xAad6125bE3E57473fb575af47c4B96253c1bEEEa` |
-| **Token** | WaitReward Token (WRT) — ERC-20 |
-| **Explorer** | [View on Snowtrace](https://testnet.snowtrace.io/address/0xAad6125bE3E57473fb575af47c4B96253c1bEEEa) |
-| **Network** | Avalanche Fuji (Chain ID: 43113) |
-| **RPC** | `https://api.avax-test.network/ext/bc/C/rpc` |
-
-### Contract Functions
-
-- `settleAppointment(id, patient, scheduledTime, actualTime)` → Mints WRT tokens based on delay tier
-- `registerCommerce(name)` **payable** → Commerce pays 0.01 AVAX/month subscription
-- `depositForRedemptions()` → Commerce deposits funds to back patient redemptions
-- `redeemPoints(commerceAddress, points)` → Burns WRT, transfers AVAX to patient, 3% protocol fee
-- `withdrawFees()` → Protocol owner withdraws accumulated fees
-
-### Verified E2E on Fuji
-
-- **Appointment FUJI-TURNO-001:** 45 min delay → 150 WP minted ✅
-- **Tx:** [0x3cd7084b...](https://testnet.snowtrace.io/tx/0x3cd7084b205a3de8534057d2a5a78d49674829de99353f4155a803547937b219)
+### Frontend
+- **Framework:** React + Vite
+- **Styling:** TailwindCSS
+- **PWA:** Service Worker + Web Push API
+- **QR:** qrcode.react
+- **Auth:** DNI-based login (no wallet required for users)
 
 ---
 
-## 💼 Business Model
+## Features
 
-| Actor | Action | Cost |
-|-------|--------|------|
-| **Commerce** | Monthly subscription | 0.01 AVAX/month |
-| **Commerce** | Deposit for redemptions | Variable (backs WP redemptions) |
-| **Protocol** | Fee on each redemption | 3% automatic (in Solidity) |
-| **Patient** | Receives WP & redeems | Free |
-| **Clinic** | Registers attendance | Free |
+### For Patients 🧑‍⚕️
+- ✅ Login with DNI (no crypto knowledge required)
+- ✅ Real-time WaitPoints balance
+- ✅ Membership level (Bronze → Premium)
+- ✅ Benefits catalog with one-tap redemption
+- ✅ QR code generation (valid 60 days)
+- ✅ Appointment history with on-chain proof
+- ✅ Queue status: "4 patients ahead, ~35 min wait"
+- ✅ Push notifications when points are received
+- ✅ Install as mobile app (PWA)
 
-### Revenue Streams
+### For Clinics 👨‍⚕️
+- ✅ Register attendance with DNI (no wallet input)
+- ✅ AI delay prediction by specialty (Cardiology, Pediatrics, etc.)
+- ✅ Analytics dashboard: avg delay, peak hours, points awarded
+- ✅ PDF report export
+- ✅ Contract verification endpoint
 
-1. **3% redemption fee** — Automatic on every point redemption
-2. **Subscription fees** — Monthly from each registered commerce
-3. **V2: DeFi yield** — Subscription deposits pooled into Aave/Morpho for yield generation
+### For Commerces 🏪
+- ✅ Login by business name
+- ✅ QR code scanner for redemptions
+- ✅ Dashboard with redemption history
+- ✅ Automatic payment processing via smart contract
 
----
-
-## 🎯 Tracks Applied
-
-### 🔴 Avalanche Track ($5,000 USDC)
-- **Loyalty program** built entirely on Avalanche L1
-- ERC-20 token for trustless point management
-- On-chain settlement of appointments with automated tier-based rewards
-- Commerce deposits and redemptions handled by smart contract
-
-### 💳 Fiserv Fintech Track ($1,000 USD)
-- **Merchant-focused app** with AI-powered delay prediction
-- Commerce dashboard for tracking redemptions and managing deposits
-- QR code generation for in-store point redemption
-- Real-world payment flow: patient earns → redeems at partner stores
-
----
-
-## 🗺 Roadmap V2
-
-- **🔮 WhatsApp Integration** — Notify patients of predicted delays before arrival
-- **🏦 DeFi Yield Pool** — Commerce subscription funds deposited into Aave/Morpho; discounts auto-funded by yield (commerce "lends" capital instead of "spending" it)
-- **🤝 Health Insurance (Obras Sociales) Integration** — Auto-detect overbooked slots from insurance schedules
-- **🌎 LATAM Expansion** — Scale to Brazil, Mexico, Colombia (similar healthcare wait issues)
-- **📊 Advanced ML** — Real-time delay prediction using live queue data
+### Technical
+- ✅ Smart contract deployed on Avalanche Fuji
+- ✅ All redemptions verified on-chain (transparent, immutable)
+- ✅ Automatic 3% protocol fee on every redemption
+- ✅ Supabase real-time database
+- ✅ Web Push notifications
+- ✅ PWA installable on iOS/Android
+- ✅ PDF analytics reports
 
 ---
 
-## 🚀 Running Locally
+## AI Module
 
-### Prerequisites
+The Flask AI module predicts delays **before they happen**, turning a reactive compensation system into a proactive clinic management tool.
 
+```
+GET /predict-delay/<clinic_id>/<specialist>
+→ { predicted_delay: 27, confidence: 0.78, patients_ahead: 4 }
+
+GET /queue-status/<clinic_id>
+→ { patients_ahead: 4, estimated_wait_minutes: 35, confidence: 0.75 }
+
+GET /clinic-metrics/<clinic_id>
+→ { avg_delay: 18.5, total_appointments: 847, on_time_rate: 0.23 }
+```
+
+Data is currently synthetic (representative of Argentine clinic patterns).
+V2 will use real clinic historical data.
+
+---
+
+## Smart Contract
+
+**WaitReward.sol** — ERC-20 token with integrated loyalty logic:
+```solidity
+// Mint WaitPoints based on delay
+function settleAppointment(
+    bytes32 appointmentId,
+    address patient,
+    uint256 scheduledTime,
+    uint256 actualTime
+) external onlyAuthorizedClinic
+
+// Redeem points at a registered commerce
+function redeemPoints(
+    address commerce,
+    uint256 points
+) external  // 3% fee auto-deducted
+
+// Commerce registration with monthly subscription
+function registerCommerce(string memory name)
+    external payable  // 0.01 ETH/month
+```
+
+**Deployed transaction:**
+`0x3cd7084b205a3de8534057d2a5a78d49674829de99353f4155a803547937b219`
+
+---
+
+## Running Locally
+
+### Requirements
 - Node.js 18+
 - Python 3.9+
-- MetaMask browser extension
 - Git
 
 ### Setup
 
+**Terminal 1 — Backend:**
 ```bash
-# Clone the repository
 git clone https://github.com/ortugonzalez/waitreward.git
-cd waitreward
+cd waitreward/backend
+cp .env.example .env
+# Add your SUPABASE_URL, SUPABASE_ANON_KEY, CLINIC_PRIVATE_KEY
+npm install && npm start
 ```
 
-### Terminal 1 — Backend
-
+**Terminal 2 — AI Module:**
 ```bash
-cd backend
-npm install
-npm start
-# → Running on http://localhost:3001
-# → Connected to Avalanche Fuji (no local node needed)
-```
-
-### Terminal 2 — AI Module
-
-```bash
-cd ai-module
+cd waitreward/ai-module
 pip install -r requirements.txt
 python app.py
-# → Running on http://localhost:5000
 ```
 
-### Terminal 3 — Frontend
-
+**Terminal 3 — Frontend:**
 ```bash
-cd frontend
-npm install
-npm run dev
-# → Running on http://localhost:5175
+cd waitreward/frontend
+echo "VITE_API_URL=http://localhost:3001" > .env
+echo "VITE_CONTRACT_ADDRESS=0xAad6125bE3E57473fb575af47c4B96253c1bEEEa" >> .env
+npm install && npm run dev
+# → http://localhost:5175
 ```
 
-### Environment Variables
-
-**Backend** (`backend/.env`):
-```env
-RPC_URL=https://api.avax-test.network/ext/bc/C/rpc
-CONTRACT_ADDRESS=0xAad6125bE3E57473fb575af47c4B96253c1bEEEa
-CLINIC_PRIVATE_KEY=<deployer-private-key>
-PORT=3001
-```
-
-**Frontend** (`frontend/.env`):
-```env
-VITE_API_URL=http://localhost:3001
-VITE_CONTRACT_ADDRESS=0xAad6125bE3E57473fb575af47c4B96253c1bEEEa
-```
-
-### MetaMask Configuration
-
-1. Add Avalanche Fuji network (Chain ID: 43113, RPC: `https://api.avax-test.network/ext/bc/C/rpc`)
-2. Get test AVAX from the [Avalanche Faucet](https://faucet.avax.network/)
+### Demo Credentials
+| DNI | Name | Role |
+|-----|------|------|
+| 12345678 | María García | Patient |
+| 87654321 | Juan Pérez | Patient |
+| 99887766 | Dr. Carlos López | Clinic |
+| 55443322 | Farmacia Del Pueblo | Commerce |
 
 ---
 
-## 🗂 Project Structure
+## API Reference
 
-```
-waitreward/
-├── contracts/
-│   └── WaitReward.sol          # Smart contract (Solidity)
-├── backend/
-│   ├── index.js                # Express server entry
-│   ├── routes/settle.js        # Appointment settlement
-│   ├── routes/points.js        # WaitPoints balance
-│   ├── routes/redeem.js        # Point redemption
-│   ├── routes/commerce.js      # Commerce info
-│   └── routes/ai.js            # AI module proxy
-├── frontend/
-│   ├── src/views/PatientView   # Patient wallet & redemption
-│   ├── src/views/ClinicView    # Appointment registration + AI prediction
-│   └── src/views/CommerceView  # Commerce dashboard
-├── ai-module/
-│   ├── app.py                  # Flask API server
-│   └── delay_detector.py       # ML delay prediction
-├── scripts/
-│   └── deploy.js               # Hardhat deployment script
-└── test/                       # 39 contract tests
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /api/auth/login | Login by DNI, returns role |
+| POST | /api/settle | Register appointment, mint WaitPoints |
+| GET | /api/points/:wallet | Get patient balance |
+| GET | /api/rewards/catalog | Benefits catalog |
+| POST | /api/rewards/generate-qr | Generate redemption QR |
+| POST | /api/rewards/redeem-qr | Validate and process QR |
+| GET | /api/analytics/clinic | Clinic analytics dashboard |
+| GET | /api/history/patient/:wallet | Patient appointment history |
+| GET | /api/contract/verify | Verify contract on Fuji |
+| GET | /api/reports/clinic/pdf | Download PDF report |
+| GET | /api/ai/predict/:clinic/:specialty | AI delay prediction |
+| GET | /api/ai/queue/:clinicId | Real-time queue status |
+| POST | /api/push/subscribe | Subscribe to push notifications |
+| GET | /health | Health check |
 
 ---
 
-## 👥 Team
+## Roadmap
 
-| | Role |
-|---|---|
-| **Santiago** | AI + Smart Contract + Architecture |
-| **Enzo** | Backend Development |
-| **Juliana** | Frontend Development |
+### V2 — Predictive (Next 3 months)
+- AI trained on real clinic historical data
+- WhatsApp integration for elderly patients (Twilio)
+- Real-time queue dashboard (Waze-style for clinics)
+- Smart rebooking: "Accept 40min delay → earn 2x points"
+
+### V3 — Ecosystem (6 months)
+- Integration with obras sociales (health insurers)
+- Multi-clinic analytics for insurance companies
+- 1,000+ clinic network across Argentina
+
+### V4 — LATAM (12 months)
+- Replicable model across Latin America
+- Strategic local partnerships per country
+- DeFi V2: commerce memberships deposited in yield protocols (Aave/Morpho)
 
 ---
 
-## 📄 License
+## Tracks Applied
 
-MIT License — see [LICENSE](LICENSE) for details.
+- **Avalanche Track** — Loyalty rewards protocol on Avalanche L1. WRT token (ERC-20) minted on-demand when clinics register delays. All redemptions on-chain with automatic 3% protocol fee.
+- **Fiserv Fintech Track** — Merchant retention platform. Pharmacies and cafés pay monthly membership. Each QR redemption brings verified new customers tracked on-chain.
 
 ---
 
-<p align="center">
-  Built with 💜 for <a href="https://dorahacks.io/hackathon/alephhackathonm26/detail">Aleph Hackathon March '26</a>
-</p>
+## Team
+
+| Role | Responsibility |
+|------|---------------|
+| Smart Contract + AI + Coordination | Solidity, deploy, AI integration, backend |
+| Backend (Enzo) | Node.js API, Supabase, push notifications |
+| Frontend (Juliana) | React, UI/UX, PWA |
+
+---
+
+## Links
+
+- **GitHub:** https://github.com/ortugonzalez/waitreward
+- **Contract:** https://testnet.snowtrace.io/address/0xAad6125bE3E57473fb575af47c4B96253c1bEEEa
+- **Network:** Avalanche Fuji (chainId: 43113)
+
+---
+
+*WaitReward — Tu tiempo vale. Ahora lo demostramos.*
