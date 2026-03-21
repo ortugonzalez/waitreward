@@ -1,0 +1,17 @@
+{
+  "name": "waitreward",
+  "version": "1.0.0",
+  "description": "WaitReward - Sistema de recompensas para pacientes",
+  "scripts": {
+    "test": "npx hardhat test",
+    "compile": "npx hardhat compile",
+    "deploy:fuji": "npx hardhat run scripts/deploy.js --network avalancheFuji"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.19.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.6.1"
+  }
+}
