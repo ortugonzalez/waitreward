@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="40" fill="#7F77DD"/>
+  <circle cx="96" cy="88" r="48" fill="none" stroke="white" stroke-width="10"/>
+  <line x1="96" y1="88" x2="96" y2="56" stroke="white" stroke-width="10" stroke-linecap="round"/>
+  <line x1="96" y1="88" x2="120" y2="104" stroke="white" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="96" cy="88" r="6" fill="white"/>
+  <text x="96" y="160" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-weight="bold" font-size="22">WaitReward</text>
+</svg>

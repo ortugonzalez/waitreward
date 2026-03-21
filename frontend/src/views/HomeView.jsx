@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -12,6 +12,9 @@ const STATIC_CATALOG = [
 export function HomeView({ setActiveTab }) {
   const [selectedBenefit, setSelectedBenefit] = useState(null);
   const [commerces, setCommerces]             = useState([]);
+  const [installPrompt, setInstallPrompt]     = useState(null);
+  const [installed, setInstalled]             = useState(false);
+  const deferredPrompt = useRef(null);
 
   useEffect(() => {
     fetch(`${API_URL}/api/rewards/commerces`)
@@ -19,6 +22,30 @@ export function HomeView({ setActiveTab }) {
       .then((d) => { if (d.success) setCommerces(d.commerces); })
       .catch(() => {});
   }, []);
+
+  // ── Capture install prompt ─────────────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      deferredPrompt.current = e;
+      setInstallPrompt(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", () => {
+      setInstalled(true);
+      setInstallPrompt(false);
+    });
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt.current) return;
+    deferredPrompt.current.prompt();
+    const { outcome } = await deferredPrompt.current.userChoice;
+    if (outcome === "accepted") setInstalled(true);
+    deferredPrompt.current = null;
+    setInstallPrompt(false);
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-surface pb-24">
@@ -33,6 +60,23 @@ export function HomeView({ setActiveTab }) {
       </div>
 
       <div className="flex-1 px-4 -mt-6 flex flex-col gap-6">
+
+        {/* Instalar PWA */}
+        {installPrompt && !installed && (
+          <div className="bg-white rounded-card shadow-sm p-4 flex items-center gap-3">
+            <span className="text-2xl">📲</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-ink">Instalá WaitReward</p>
+              <p className="text-xs text-gray-400">Accedé desde tu pantalla de inicio</p>
+            </div>
+            <button
+              onClick={handleInstall}
+              className="px-4 py-2 rounded-full bg-primary text-white font-bold text-xs active:scale-95 transition-transform flex-shrink-0"
+            >
+              Instalar
+            </button>
+          </div>
+        )}
 
         {/* Catálogo — cards clickeables */}
         <div className="bg-white rounded-card shadow-sm p-5">

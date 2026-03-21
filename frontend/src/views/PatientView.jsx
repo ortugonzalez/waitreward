@@ -4,6 +4,42 @@ import toast from "react-hot-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { getPoints } from "../api/client";
 
+async function subscribeToNotifications(wallet) {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  try {
+    const permResult = await Notification.requestPermission();
+    if (permResult !== "granted") return;
+
+    const keyRes = await fetch(`${API_URL}/api/push/vapid-public-key`);
+    const { key } = await keyRes.json();
+    if (!key) return;
+
+    const reg = await navigator.serviceWorker.ready;
+    const existing = await reg.pushManager.getSubscription();
+    if (existing) {
+      // Already subscribed — just re-send to backend to ensure it's stored
+      await fetch(`${API_URL}/api/push/subscribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wallet, subscription: existing.toJSON() }),
+      });
+      return;
+    }
+
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: key,
+    });
+    await fetch(`${API_URL}/api/push/subscribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ wallet, subscription: sub.toJSON() }),
+    });
+  } catch (err) {
+    console.warn("[push] Subscribe error:", err.message);
+  }
+}
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export function PatientView({ session, onLogout }) {
@@ -37,6 +73,8 @@ export function PatientView({ session, onLogout }) {
     fetchPoints();
     fetchCatalog();
     const interval = setInterval(fetchPoints, 15_000);
+    // Subscribe to push notifications (asks permission once)
+    if (session?.wallet) subscribeToNotifications(session.wallet);
     return () => clearInterval(interval);
   }, [fetchPoints, fetchCatalog]);
 

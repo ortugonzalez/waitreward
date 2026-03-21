@@ -1,0 +1,44 @@
+{
+  "name": "WaitReward",
+  "short_name": "WaitReward",
+  "description": "Tu tiempo vale. Acumulá WaitPoints por cada espera médica.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F5F7",
+  "theme_color": "#7F77DD",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ver mis puntos",
+      "short_name": "Mis puntos",
+      "description": "Ver saldo de WaitPoints",
+      "url": "/?tab=patient",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Registrar atención",
+      "short_name": "Clínica",
+      "description": "Registrar turno médico",
+      "url": "/?tab=clinic",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["health", "medical", "finance"],
+  "lang": "es-AR",
+  "dir": "ltr",
+  "scope": "/"
+}

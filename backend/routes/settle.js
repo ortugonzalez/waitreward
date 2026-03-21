@@ -3,6 +3,7 @@ const { ethers } = require("ethers");
 const { contractClinic, contractRead } = require("../lib/contract");
 const { PATIENTS } = require("../lib/patients");
 const { supabase } = require("../lib/supabase");
+const { sendPushToWallet } = require("../lib/push");
 
 const router = Router();
 
@@ -103,6 +104,18 @@ router.post("/", async (req, res, next) => {
       points_awarded: Number(ethers.formatEther(pointsAwarded)),
       tx_hash: receipt.hash || receipt.transactionHash
     }).then(() => {}).catch(e => console.error('[settle] Supabase log error:', e.message));
+
+    // ── Send push notification to patient (non-blocking) ──────────────────────
+    if (Number(pointsAwarded) > 0) {
+      const pts = Math.round(parseFloat(ethers.formatEther(pointsAwarded)));
+      const delay = Number(delayMinutes);
+      sendPushToWallet(patientWallet, {
+        title: "¡Recibiste WaitPoints! ⏱",
+        body: `Tu turno demoró ${delay} min. Recibiste ${pts} WaitPoints.`,
+        tag: `appt-${appointmentId}`,
+        url: "/",
+      }).catch(() => {});
+    }
 
     return res.json(response);
   } catch (err) {
