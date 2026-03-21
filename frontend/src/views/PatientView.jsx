@@ -420,6 +420,9 @@ export function PatientView({ session, onLogout }) {
         )}
       </div>
 
+      {qrModal && (
+        <QRRewardModal data={qrModal} onClose={() => setQrModal(null)} />
+      )}
     </div>
   );
 }

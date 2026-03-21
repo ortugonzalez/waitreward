@@ -36,6 +36,7 @@ export function HomeView({ setActiveTab }) {
   const [installPrompt, setInstallPrompt] = useState(null);
   const [installed, setInstalled] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showInstallInstructions, setShowInstallInstructions] = useState(false);
   const deferredPrompt = useRef(null);
 
   const [levels, setLevels] = useState([
@@ -136,7 +137,7 @@ export function HomeView({ setActiveTab }) {
       <div className="flex-1 px-4 -mt-8 flex flex-col gap-6 relative z-10">
 
         {/* Instalar PWA */}
-        {installPrompt && !installed && (
+        {!installed && (
           <div className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.08)] p-4 flex items-center gap-3">
             <span className="text-3xl">📲</span>
             <div className="flex-1 min-w-0">
@@ -144,7 +145,7 @@ export function HomeView({ setActiveTab }) {
               <p className="text-[11px] text-gray-500">Accedé desde tu pantalla de inicio</p>
             </div>
             <button
-              onClick={handleInstall}
+              onClick={installPrompt ? handleInstall : () => setShowInstallInstructions(true)}
               className="px-4 py-2 rounded-[12px] bg-[#7F77DD] text-white font-bold text-xs active:scale-95 transition-transform flex-shrink-0"
             >
               Instalar
@@ -152,16 +153,65 @@ export function HomeView({ setActiveTab }) {
           </div>
         )}
 
+        {/* Install instructions modal (iOS / desktop fallback) */}
+        {showInstallInstructions && (
+          <div
+            className="fixed inset-0 z-50 flex items-end justify-center"
+            onClick={() => setShowInstallInstructions(false)}
+          >
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <div
+              className="relative w-full max-w-sm bg-white rounded-t-[24px] p-6 pb-10 flex flex-col gap-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-10 h-1.5 bg-gray-300 rounded-full mx-auto mb-1" />
+              <p className="font-black text-[#1A1A2E] text-lg">Cómo instalar</p>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-start gap-3">
+                  <span className="text-xl">🍎</span>
+                  <div>
+                    <p className="text-sm font-bold text-[#1A1A2E]">iPhone / iPad</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Tocá el botón Compartir (<strong>⬆</strong>) y luego <strong>"Agregar a inicio"</strong></p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-xl">🤖</span>
+                  <div>
+                    <p className="text-sm font-bold text-[#1A1A2E]">Android</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Tocá el menú <strong>⋮</strong> del navegador y elegí <strong>"Agregar a pantalla de inicio"</strong></p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-xl">💻</span>
+                  <div>
+                    <p className="text-sm font-bold text-[#1A1A2E]">PC / Mac</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Hacé clic en el ícono <strong>⊕</strong> en la barra de direcciones del navegador</p>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowInstallInstructions(false)}
+                className="mt-2 w-full py-3 rounded-[14px] bg-[#7F77DD] text-white font-bold text-sm active:scale-95 transition-transform"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Niveles de membresía */}
         <div>
           <h2 className="font-bold text-[#1A1A2E] text-lg mb-4 px-1">Niveles de membresía</h2>
-          <div className="flex overflow-x-auto pb-4 -mx-4 px-4 gap-3 snap-x hide-scrollbar">
+          <div
+            className="flex lg:grid lg:grid-cols-4 overflow-x-auto pb-4 -mx-4 px-4 lg:mx-0 lg:px-0 gap-3 snap-x hide-scrollbar lg:overflow-visible"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
             {levels.map((lvl, i) => {
               const isCurrent = userLevel === lvl.name;
               return (
                 <div
                   key={i}
-                  className={`snap-start shrink-0 w-[200px] rounded-[16px] p-4 flex flex-col gap-2 transition-all ${isCurrent ? 'border-2 shadow-[0_4px_16px_rgba(0,0,0,0.1)]' : 'border border-transparent bg-white shadow-[0_2px_8px_rgba(0,0,0,0.05)]'}`}
+                  className={`snap-start w-[200px] lg:w-auto rounded-[16px] p-4 flex flex-col gap-2 transition-all ${isCurrent ? 'border-2 shadow-[0_4px_16px_rgba(0,0,0,0.1)]' : 'border border-transparent bg-white shadow-[0_2px_8px_rgba(0,0,0,0.05)]'}`}
                   style={{
                     borderColor: isCurrent ? lvl.color : 'transparent',
                     backgroundColor: isCurrent ? `${lvl.color}15` : 'white'
@@ -221,7 +271,10 @@ export function HomeView({ setActiveTab }) {
         {/* Comercios adheridos */}
         <div>
           <h2 className="font-bold text-[#1A1A2E] text-lg mb-4 px-1">Comercios adheridos</h2>
-          <div className="flex overflow-x-auto pb-4 -mx-4 px-4 gap-3 snap-x hide-scrollbar">
+          <div
+            className="flex overflow-x-auto pb-4 -mx-4 px-4 gap-3 snap-x"
+            style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
             {displayCommerces.map((c, i) => (
               <div
                 key={i}
@@ -243,27 +296,7 @@ export function HomeView({ setActiveTab }) {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col gap-3 mt-2">
-          <button
-            onClick={() => setActiveTab("patient")}
-            className="w-full py-4 rounded-[12px] bg-[#7F77DD] text-white font-bold text-base active:scale-[0.98] transition-all shadow-[0_4px_12px_rgba(127,119,221,0.3)] flex items-center justify-center gap-2"
-          >
-            🧑‍⚕️ Soy paciente
-          </button>
-          <button
-            onClick={() => setActiveTab("clinic")}
-            className="w-full py-4 rounded-[12px] bg-white text-[#7F77DD] border-2 border-[#7F77DD] font-bold text-base active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-          >
-            👨‍⚕️ Soy médico
-          </button>
-          <button
-            onClick={() => setActiveTab("commerce")}
-            className="w-full py-4 bg-transparent text-[#1A1A2E] font-bold text-sm active:opacity-70 transition-all flex items-center justify-center gap-2"
-          >
-            🏪 Soy comercio <span className="text-gray-400">→</span>
-          </button>
-        </div>
+
 
       </div>
 

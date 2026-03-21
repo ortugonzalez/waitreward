@@ -4,71 +4,62 @@ import toast from "react-hot-toast";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const MOCK_REDEMPTIONS = [
-  { points: 150, date: "Hoy 10:32", patient: "María G." },
-  { points: 50,  date: "Hoy 09:15", patient: "Carlos R." },
-  { points: 300, date: "Ayer 18:47", patient: "Ana L." },
-  { points: 150, date: "Ayer 11:20", patient: "Luis M." },
+  { points: 150, discount: "$1.50", time: "10:32", date: "Hoy" },
+  { points: 50, discount: "$0.50", time: "09:15", date: "Hoy" },
+  { points: 300, discount: "$3.00", time: "18:47", date: "Ayer" },
+  { points: 150, discount: "$1.50", time: "11:20", date: "Ayer" },
 ];
 
-export function CommerceView({ session, onLogout }) {
-  const [searchInput, setSearchInput] = useState("");
-  const [commerce, setCommerce]       = useState(null);
-  const [loading, setLoading]         = useState(false);
+export function CommerceView({ session }) {
+  const [commerce, setCommerce] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // QR Scanner
-  const [qrInput, setQrInput]   = useState("");
+  const [qrInput, setQrInput] = useState("");
   const [qrResult, setQrResult] = useState(null);
   const [qrLoading, setQrLoading] = useState(false);
 
-  // ── Fetch commerce by name ─────────────────────────────────────────────────
   const fetchCommerceByName = useCallback(async (nameStr) => {
     if (!nameStr) return;
     setLoading(true);
-    setCommerce(null);
     try {
-      const res  = await fetch(`${API_URL}/api/commerce/search?name=${encodeURIComponent(nameStr)}`);
+      const res = await fetch(`${API_URL}/api/commerce/search?name=${encodeURIComponent(nameStr)}`);
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || "Comercio no encontrado");
-      setCommerce(data);
+      if (data.success) {
+        setCommerce(data);
+      }
     } catch (err) {
       console.error("[CommerceView]", err);
-      toast.error(err.message || "Comercio no encontrado");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // ── Auto-load si hay sesión de comercio ───────────────────────────────────
   useEffect(() => {
     if (session?.role === "commerce" && session?.name) {
       fetchCommerceByName(session.name);
     } else {
-      // Si no hay sesión comercio, carga Farmacia Del Pueblo por defecto
       fetchCommerceByName("Farmacia Del Pueblo");
     }
   }, [session, fetchCommerceByName]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (!searchInput.trim()) return toast.error("Ingresá el nombre del comercio");
-    fetchCommerceByName(searchInput.trim());
-  };
-
-  // ── Validar QR del paciente ────────────────────────────────────────────────
   const handleValidateQR = async (e) => {
     e.preventDefault();
     if (!qrInput.trim()) return toast.error("Ingresá el código QR");
     setQrLoading(true);
     setQrResult(null);
     try {
-      const res  = await fetch(`${API_URL}/api/rewards/redeem-qr`, {
-        method:  "POST",
+      const res = await fetch(`${API_URL}/api/rewards/redeem-qr`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ qrCode: qrInput.trim() }),
+        body: JSON.stringify({ qrCode: qrInput.trim() }),
       });
       const data = await res.json();
       setQrResult(data);
-      if (data.success) { toast.success("Canje exitoso"); setQrInput(""); }
+      if (data.success) {
+        toast.success("Canje exitoso");
+        setQrInput("");
+      }
     } catch {
       setQrResult({ success: false, message: "Error de conexión" });
     } finally {
@@ -76,198 +67,151 @@ export function CommerceView({ session, onLogout }) {
     }
   };
 
-  const expiryDate = commerce?.subscriptionExpiryISO
-    ? new Date(commerce.subscriptionExpiryISO).toLocaleDateString("es-AR", {
-        day: "2-digit", month: "short", year: "numeric",
-      })
-    : null;
+  // Safe checks for rendering fallback values if api loading/fails
+  const displayCommerce = commerce || {
+    name: session?.name || "Comercio",
+    emoji: "🏪",
+    category: "Comercio Adherido",
+    active: true,
+    address: "Corrientes 1234, CABA",
+    hours: "Lun a Vie 09:00 - 20:00",
+  };
 
-  const totalRedemptions = MOCK_REDEMPTIONS.reduce((sum, r) => sum + r.points, 0);
+  const todayRedemptions = MOCK_REDEMPTIONS.filter(r => r.date === "Hoy");
 
   return (
-    <div className="flex flex-col gap-4 px-4">
+    <div className="flex flex-col gap-6 px-4 bg-[#F8F7FF] min-h-screen text-[#1A1A2E] font-sans pb-8 max-w-full">
 
-      {/* ── Escanear QR del paciente ─────────────────────────────────────── */}
-      <div className="bg-white rounded-card shadow-sm p-5 flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">📲</span>
-            <h2 className="font-bold text-ink text-base">Escanear QR</h2>
+      {/* ── Sección 1: Header del comercio ── */}
+      <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.06)] p-6 mt-4 flex flex-col gap-4 border border-gray-100">
+        <div className="flex items-start gap-4">
+          <div className="w-16 h-16 rounded-[16px] bg-[#F8F7FF] flex items-center justify-center text-4xl shrink-0 border border-[#7F77DD]/10">
+            {displayCommerce.emoji || "🏪"}
           </div>
-          {session && (
-            <button onClick={onLogout} className="text-xs text-gray-400 hover:text-red-400 transition-colors">
-              Salir
-            </button>
-          )}
+          <div className="flex-1 min-w-0 pt-1">
+            <div className="flex items-center justify-between gap-2">
+              <h1 className="text-xl font-black text-[#1A1A2E] leading-tight truncate">
+                {displayCommerce.name}
+              </h1>
+              <span className="shrink-0 inline-flex items-center gap-1.5 bg-[#22C55E]/10 text-[#22C55E] text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]"></span> Activo
+              </span>
+            </div>
+            <p className="text-[13px] font-bold text-[#7F77DD] mt-1">{displayCommerce.category || "General"}</p>
+          </div>
         </div>
-        {session?.name && (
-          <p className="text-xs text-gray-500">Hola, <strong>{session.name}</strong> 👋</p>
-        )}
-        <p className="text-xs text-gray-400">
-          Ingresá el código QR del paciente para validar el canje
-        </p>
-        <form onSubmit={handleValidateQR} className="flex gap-2">
+
+        <div className="flex flex-col gap-2 mt-2 pt-4 border-t border-gray-100">
+          <div className="flex items-center gap-2 text-[13px] text-gray-600">
+            <span className="text-lg">📍</span>
+            <span className="font-medium">{displayCommerce.address || "Av. Corrientes 1234, CABA"}</span>
+          </div>
+          <div className="flex items-center gap-2 text-[13px] text-gray-600">
+            <span className="text-lg">🕗</span>
+            <span className="font-medium">{displayCommerce.hours || "Lunes a Viernes 09:00 a 20:00"}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Sección 2: Métricas del día ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="bg-white rounded-[16px] p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-[#7F77DD]/10 flex items-center justify-center text-[#7F77DD] text-xl">🔄</div>
+          <div>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Canjes hoy</p>
+            <p className="text-xl font-black text-[#1A1A2E] leading-none mt-1">3</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-[16px] p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-500 text-xl">💸</div>
+          <div>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Descuentos</p>
+            <p className="text-xl font-black text-[#1A1A2E] leading-none mt-1">$2.00</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-[16px] p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 text-xl">👥</div>
+          <div>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Nuevos</p>
+            <p className="text-xl font-black text-[#1A1A2E] leading-none mt-1">2</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Sección 3: Escanear QR ── */}
+      <div className="bg-white rounded-[20px] shadow-[0_4px_16px_rgba(0,0,0,0.08)] p-6 border-2 border-[#7F77DD]">
+        <div className="flex flex-col items-center gap-2 mb-4 text-center">
+          <div className="w-14 h-14 rounded-full bg-[#7F77DD]/10 flex items-center justify-center text-2xl mb-1">
+            📷
+          </div>
+          <h2 className="text-lg font-black text-[#1A1A2E]">Validar Beneficio</h2>
+          <p className="text-[13px] text-gray-500">Ingresá el código del QR del paciente para aplicar el descuento.</p>
+        </div>
+
+        <form onSubmit={handleValidateQR} className="flex flex-col gap-3">
           <input
             type="text"
-            placeholder="WR-1234567890-abc123-100"
+            placeholder="Ej: WR-1234..."
             value={qrInput}
             onChange={(e) => { setQrInput(e.target.value); setQrResult(null); }}
-            className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-ink text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full bg-[#F8F7FF] border border-gray-200 rounded-[16px] px-4 py-4 text-[#1A1A2E] text-center text-lg font-mono font-bold focus:outline-none focus:border-[#7F77DD] focus:ring-4 focus:ring-[#7F77DD]/10 transition-all placeholder:text-gray-400 placeholder:font-normal"
           />
           <button
             type="submit"
             disabled={qrLoading || !qrInput.trim()}
-            className="px-5 py-3 rounded-xl bg-primary text-white font-bold text-sm disabled:opacity-60 active:scale-95 transition-transform flex-shrink-0"
+            className="w-full py-4 rounded-[16px] bg-[#7F77DD] text-white font-black text-[15px] disabled:opacity-50 active:scale-[0.98] transition-all shadow-[0_8px_20px_rgba(127,119,221,0.3)] flex items-center justify-center gap-2"
           >
-            {qrLoading ? "…" : "Validar"}
+            {qrLoading ? <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : "Validar canje"}
           </button>
         </form>
 
         {qrResult && (
-          <div className={`rounded-xl p-4 flex items-start gap-3 ${
-            qrResult.success
-              ? "bg-green-50 border border-green-200"
-              : "bg-red-50 border border-red-200"
-          }`}>
-            <span className="text-xl">{qrResult.success ? "✅" : "❌"}</span>
-            <div>
-              {qrResult.success ? (
-                <>
-                  <p className="text-sm font-bold text-green-800">Canje exitoso</p>
-                  <p className="text-xs text-green-700 mt-0.5">
-                    {qrResult.pointsRedeemed} puntos · Descuento: {qrResult.discountValue}
-                  </p>
-                </>
-              ) : (
-                <p className="text-sm font-bold text-red-700">{qrResult.message}</p>
-              )}
+          <div className={`mt-4 rounded-[16px] p-4 flex items-start gap-3 animate-fade-in ${qrResult.success
+              ? "bg-[#22C55E]/10 border border-[#22C55E]/20"
+              : "bg-red-50 border border-red-100"
+            }`}>
+            <span className="text-2xl mt-1">{qrResult.success ? "✅" : "❌"}</span>
+            <div className="flex-1">
+              <p className={`text-[15px] font-black ${qrResult.success ? "text-[#22C55E]" : "text-red-600"}`}>
+                {qrResult.success ? "¡Canje aprobado!" : "Canje rechazado"}
+              </p>
+              <p className={`text-[13px] font-medium mt-1 ${qrResult.success ? "text-green-800" : "text-red-700"}`}>
+                {qrResult.success
+                  ? `Se descontaron ${qrResult.pointsRedeemed} WP. Aplicá un descuento de ${qrResult.discountValue}.`
+                  : qrResult.message || "El código ingresado no es válido o ya fue utilizado."}
+              </p>
             </div>
           </div>
         )}
       </div>
 
-      {/* ── Búsqueda (solo si no hay sesión de comercio) ─────────────────── */}
-      {!session?.role || session.role !== "commerce" ? (
-        <form onSubmit={handleSearch} className="bg-white rounded-card shadow-sm p-5 flex flex-col gap-3">
-          <h2 className="font-bold text-ink text-base">Buscar comercio</h2>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Ej: Farmacia Del Pueblo"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-5 py-3 rounded-xl bg-primary text-white font-bold text-sm disabled:opacity-60 active:scale-95 transition-transform flex-shrink-0"
-            >
-              {loading ? "…" : "Buscar"}
-            </button>
-          </div>
-        </form>
-      ) : null}
+      {/* ── Sección 4: Historial de canjes del día ── */}
+      <div className="bg-white rounded-[20px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-6 border border-gray-100">
+        <h3 className="font-bold text-[#1A1A2E] text-base mb-4 flex items-center gap-2">
+          <span>📋</span> Historial de hoy
+        </h3>
 
-      {/* Loading */}
-      {loading && (
-        <div className="bg-white rounded-card shadow-sm p-8 flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
-
-      {/* Commerce Dashboard */}
-      {commerce && !loading && (
-        <>
-          <div className="bg-white rounded-card shadow-sm p-5 flex flex-col gap-4">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <span className="text-2xl">{commerce.emoji || "🏪"}</span>
+        {todayRedemptions.length > 0 ? (
+          <div className="flex flex-col divide-y divide-gray-100">
+            {todayRedemptions.map((r, i) => (
+              <div key={i} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                <div className="flex items-center gap-3">
+                  <div className="text-[12px] font-bold text-gray-400 bg-[#F8F7FF] px-2.5 py-1 rounded-[8px]">
+                    {r.time}
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-black text-ink">{commerce.name}</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">{commerce.category || "Comercio Adherido"}</p>
+                <div className="text-right">
+                  <p className="text-[14px] font-black text-[#22C55E]">{r.discount}</p>
+                  <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">{r.points} WP</p>
                 </div>
               </div>
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  (commerce.subscriptionActive ?? commerce.active)
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
-                }`}
-              >
-                {(commerce.subscriptionActive ?? commerce.active) ? "✅ Activo" : "❌ Inactivo"}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              <StatCard label="Saldo"       value={`$${((commerce.depositedFunds || 0) * 35).toFixed(0)}`} icon="💰" />
-              <StatCard label="Canjes"      value={MOCK_REDEMPTIONS.length} unit="hoy" icon="🔄" />
-              <StatCard label="Suscripción" value={expiryDate ?? "—"} icon="📅" />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>Fondos para respaldar canjes</span>
-              </div>
-              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-primary-dark rounded-full transition-all"
-                  style={{ width: `${Math.min(((commerce.depositedFunds || 0) / 0.1) * 100, 100)}%` }}
-                />
-              </div>
-            </div>
+            ))}
           </div>
-
-          {/* WaitPoints recibidos */}
-          <div className="bg-gradient-to-br from-primary to-primary-dark rounded-card shadow-sm p-5 text-white">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-sm opacity-90">WaitPoints recibidos</h3>
-              <span className="text-xs opacity-70">Últimos 7 días</span>
-            </div>
-            <div className="flex items-end gap-2">
-              <span className="text-4xl font-black">{totalRedemptions}</span>
-              <span className="text-sm opacity-80 mb-1">WP</span>
-            </div>
-            <p className="text-xs opacity-70 mt-1">
-              = ${(totalRedemptions / 100).toFixed(2)} generados en ventas
-            </p>
-          </div>
-
-          {/* Canjes recientes */}
-          <div className="bg-white rounded-card shadow-sm p-5">
-            <h3 className="font-bold text-ink text-sm mb-3">Canjes recientes</h3>
-            <ul className="flex flex-col divide-y divide-gray-50">
-              {MOCK_REDEMPTIONS.map((r, i) => (
-                <li key={i} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-primary font-bold text-sm">{r.patient.charAt(0)}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-ink">{r.patient}</p>
-                    <p className="text-xs text-gray-400">{r.date}</p>
-                  </div>
-                  <span className="text-sm font-bold text-primary flex-shrink-0">+{r.points} WP</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function StatCard({ label, value, unit, icon }) {
-  return (
-    <div className="bg-surface rounded-xl p-3 flex flex-col gap-1">
-      <span className="text-lg">{icon}</span>
-      <span className="text-xs text-gray-500">{label}</span>
-      <div>
-        <span className="text-sm font-bold text-ink">{value}</span>
-        {unit && <span className="text-xs text-gray-400 ml-1">{unit}</span>}
+        ) : (
+          <p className="text-sm font-medium text-gray-500 text-center py-4 bg-[#F8F7FF] rounded-[12px]">No hay canjes registrados aún.</p>
+        )}
       </div>
+
     </div>
   );
 }
