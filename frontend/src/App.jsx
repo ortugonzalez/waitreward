@@ -1,18 +1,22 @@
 import { useState } from "react";
 import { Toaster } from "react-hot-toast";
 import { Header, Navigation } from "./components/Navigation";
-import { PatientView }  from "./views/PatientView";
-import { ClinicView }   from "./views/ClinicView";
+import { HomeView } from "./views/HomeView";
+import { PatientView } from "./views/PatientView";
+import { ClinicView } from "./views/ClinicView";
 import { CommerceView } from "./views/CommerceView";
 
-const VIEWS = {
-  patient:  <PatientView />,
-  clinic:   <ClinicView />,
-  commerce: <CommerceView />,
-};
-
 export default function App() {
-  const [activeTab, setActiveTab] = useState("patient");
+  const [activeTab, setActiveTab] = useState("home");
+
+  const VIEWS = {
+    home: <HomeView setActiveTab={setActiveTab} />,
+    patient: <PatientView />,
+    clinic: <ClinicView />,
+    commerce: <CommerceView />,
+  };
+
+  const isHome = activeTab === "home";
 
   return (
     <div className="bg-surface min-h-screen">
@@ -31,14 +35,14 @@ export default function App() {
 
       {/* Layout centrado max 480px */}
       <div className="max-w-app mx-auto relative min-h-screen flex flex-col">
-        <Header activeTab={activeTab} />
+        {!isHome && <Header activeTab={activeTab} />}
 
-        {/* Contenido con espacio para header y nav */}
-        <main className="flex-1 pt-20 pb-24 overflow-y-auto">
+        {/* Contenido con espacio para header y nav (en Home quita padding) */}
+        <main className={`flex-1 ${!isHome ? 'pt-20 pb-24' : ''} overflow-y-auto`}>
           {VIEWS[activeTab]}
         </main>
 
-        <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
+        {!isHome && <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />}
       </div>
     </div>
   );
