@@ -11,7 +11,7 @@ const SPECIALISTS = [
   { id: "dermatologia", label: "Dermatología", icon: "🩺" },
   { id: "traumatologia", label: "Traumatología", icon: "🦴" },
   { id: "pediatria", label: "Pediatría", icon: "👶" },
-  { id: "clinica_general", label: "Clínica general", icon: "🏥" },
+  { id: "clinica_general", label: "General", icon: "🏥" },
   { id: "oftalmologia", label: "Oftalmología", icon: "👁️" },
 ];
 
@@ -53,7 +53,6 @@ export function ClinicView({ session, onLogout }) {
   const handleChange = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
-  // Helper to resolve DNI when user leaves the input
   const handleDNIBlur = async () => {
     const dni = form.patientDNI.trim();
     if (!dni) {
@@ -64,7 +63,7 @@ export function ClinicView({ session, onLogout }) {
     setResolvingDNI(true);
     setPatientName(null);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/patients/${dni}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/patients/${dni}`);
       const data = await res.json();
       if (data.success) {
         setPatientName(data.name);
@@ -79,7 +78,6 @@ export function ClinicView({ session, onLogout }) {
     }
   };
 
-  // ── Fetch AI prediction when specialist changes ─────────────────────────────
   useEffect(() => {
     if (!selectedSpecialist) {
       setPrediction(null);
@@ -101,7 +99,6 @@ export function ClinicView({ session, onLogout }) {
       })
       .catch((err) => {
         if (!cancelled) {
-          console.error("[WaitReward] AI prediction error:", err);
           if (err.message?.includes("503") || err.message?.includes("no disponible") || err.message?.includes("Failed to fetch")) {
             setPredictionError("Módulo de IA no disponible en este momento.");
           } else {
@@ -114,7 +111,6 @@ export function ClinicView({ session, onLogout }) {
     return () => { cancelled = true; };
   }, [selectedSpecialist]);
 
-  // ── Submit appointment ──────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     const { appointmentId, patientDNI, scheduledDatetime, actualDatetime } = form;
@@ -135,8 +131,6 @@ export function ClinicView({ session, onLogout }) {
     setResult(null);
 
     try {
-      // The backend /api/settle accepts "dni" and optionally patientWallet.
-      // We pass dni. If the backend fails to connect to the smart contract it will throw an error.
       const data = await settle({
         appointmentId,
         dni: patientDNI,
@@ -144,7 +138,6 @@ export function ClinicView({ session, onLogout }) {
         actualTimestamp: actual,
       });
 
-      // Include the resolved patient name in the result for UI feedback
       data.patientName = patientName || `Paciente (${patientDNI})`;
 
       setResult(data);
@@ -166,7 +159,7 @@ export function ClinicView({ session, onLogout }) {
     } catch (err) {
       let msg = err.message || "Error al registrar el turno";
       if (msg.includes("Failed to fetch")) {
-        msg = "⚠️ No se puede conectar al servidor. Verificá que el backend esté corriendo.";
+        msg = "⚠️ No se puede conectar al servidor.";
       }
       toast.error(msg);
     } finally {
@@ -174,136 +167,130 @@ export function ClinicView({ session, onLogout }) {
     }
   };
 
+  const getDocName = () => {
+    if (!session?.name) return "Doc";
+    return session.name.includes("Dr") ? session.name : `Dr. ${session.name.split(' ')[0]}`;
+  };
+
   return (
-    <div className="flex flex-col gap-4 px-4">
-      {/* Saludo y logout */}
-      {session && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-bold text-ink">Hola, {session.name} 👋</p>
-          <button
-            onClick={onLogout}
-            className="text-xs text-gray-400 hover:text-red-400 transition-colors"
-          >
-            Cerrar sesión
-          </button>
-        </div>
-      )}
+    <div className="flex flex-col gap-6 px-4 bg-[#F8F7FF] min-h-screen text-[#1A1A2E] font-sans pb-8">
+      {/* Header */}
+      <div className="flex items-center justify-between pt-4">
+        <h1 className="text-2xl font-black text-[#1A1A2E]">Hola, {getDocName()} 👋</h1>
+        <button
+          onClick={onLogout}
+          className="text-xs font-bold text-gray-400 hover:text-red-400 transition-colors"
+        >
+          Cerrar sesión
+        </button>
+      </div>
 
       {/* IA Prediction */}
-      <div className="bg-white rounded-card shadow-sm p-5 flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">🤖</span>
-          <h2 className="font-bold text-ink text-base">Predicción de demora (IA)</h2>
+      <div className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🤖</span>
+            <h2 className="font-bold text-[#1A1A2E] text-base">Predicción de demora (IA)</h2>
+          </div>
         </div>
-        <p className="text-xs text-gray-500">
-          Seleccioná una especialidad para ver la demora estimada por nuestro modelo predictivo
+        <p className="text-[13px] text-gray-500 leading-tight">
+          Seleccioná una especialidad para ver la demora estimada en tiempo real.
         </p>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2 mt-1">
           {SPECIALISTS.map((s) => (
             <button
               key={s.id}
               onClick={() => setSelectedSpecialist(prev => prev === s.id ? "" : s.id)}
-              className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-xs font-medium transition-all active:scale-95 ${selectedSpecialist === s.id
-                ? "bg-primary text-white shadow-md"
-                : "bg-surface text-gray-600 hover:bg-gray-100"
+              className={`flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-[12px] text-[11px] font-bold transition-all active:scale-95 border ${selectedSpecialist === s.id
+                  ? "bg-[#7F77DD] text-white border-[#7F77DD] shadow-[0_4px_12px_rgba(127,119,221,0.3)]"
+                  : "bg-white text-gray-600 border-gray-100 hover:border-[#7F77DD]/30"
                 }`}
             >
-              <span className="text-lg">{s.icon}</span>
-              <span className="truncate w-full text-center">{s.label}</span>
+              <span className="text-2xl">{s.icon}</span>
+              <span className="truncate w-full text-center px-1">{s.label}</span>
             </button>
           ))}
         </div>
 
-        {/* Prediction result */}
         {predictionLoading && (
-          <div className="flex items-center justify-center py-4">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm text-gray-500 ml-2">Analizando datos…</span>
+          <div className="flex flex-col items-center justify-center py-6 gap-3">
+            <div className="w-8 h-8 border-4 border-[#7F77DD] border-t-transparent rounded-full animate-spin" />
+            <span className="text-[13px] font-bold text-[#7F77DD]">Procesando datos del modelo...</span>
           </div>
         )}
 
         {predictionError && (
-          <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 flex items-start gap-2">
-            <span className="text-orange-500 text-sm">⚠️</span>
-            <p className="text-xs text-orange-700">{predictionError}</p>
+          <div className="bg-red-50 border border-red-100 rounded-[12px] p-3 flex items-start gap-2 mt-2">
+            <span className="text-red-500 text-sm">⚠️</span>
+            <p className="text-[12px] font-semibold text-red-700">{predictionError}</p>
           </div>
         )}
 
         {prediction && !predictionLoading && (
-          <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-4 flex flex-col gap-3">
-            {/* Pacientes en cola */}
-            {prediction.patients_ahead != null && (
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">👥</span>
-                <div>
-                  <p className="text-base font-black text-ink">
-                    Hay {prediction.patients_ahead} pacientes delante tuyo
-                  </p>
-                  <p className="text-xs text-gray-400">en cola ahora mismo</p>
-                </div>
-              </div>
-            )}
+          <div className="bg-gradient-to-br from-[#7F77DD]/5 to-[#9B8FE8]/15 rounded-[16px] p-5 flex flex-col gap-4 border border-[#7F77DD]/10 mt-2 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/40 blur-3xl rounded-full -translate-y-1/2 translate-x-1/3" />
 
-            {/* Demora y confianza */}
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500">Demora estimada</p>
-                <div className="flex items-baseline gap-1 mt-1">
-                  <span className="text-3xl font-black text-primary">
-                    {prediction.predicted_delay_minutes ?? prediction.predicted_delay ?? "—"}
-                  </span>
-                  <span className="text-sm font-semibold text-gray-500">minutos</span>
+            <div className="flex items-center justify-between relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="bg-white p-2 rounded-[12px] shadow-sm">
+                  <span className="text-2xl block">⏱️</span>
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold text-[#7F77DD] uppercase tracking-widest">Demora est.</p>
+                  <p className="text-[32px] font-black text-[#1A1A2E] leading-none mt-1">
+                    {prediction.predicted_delay_minutes ?? prediction.predicted_delay ?? "—"} <span className="text-sm text-gray-500 font-bold">min</span>
+                  </p>
                 </div>
               </div>
+
               <div className="text-right">
-                <p className="text-xs text-gray-500">Confianza</p>
-                <span className="text-xl font-bold text-ink mt-1 block">
-                  {Math.round((prediction.confidence ?? 0) * 100)}%
-                </span>
+                <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Pacientes</p>
+                <div className="flex items-center justify-end gap-1 mt-1 text-[#1A1A2E] font-black text-xl">
+                  <span>👥</span> {prediction.patients_ahead ?? "—"}
+                </div>
               </div>
             </div>
 
-            {/* Barra de confianza */}
-            <div>
-              <div className="w-full h-2 bg-white rounded-full overflow-hidden">
+            <div className="flex flex-col gap-1.5 relative z-10">
+              <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+                <span className="text-[#22C55E]">Confianza del modelo</span>
+                <span className="text-gray-500">{Math.round((prediction.confidence ?? 0) * 100)}%</span>
+              </div>
+              <div className="w-full h-2.5 bg-white/60 rounded-full overflow-hidden shadow-inner">
                 <div
-                  className="h-full bg-primary rounded-full transition-all"
+                  className="h-full bg-gradient-to-r from-[#22C55E] to-[#4ADE80] rounded-full transition-all duration-1000 ease-out"
                   style={{ width: `${(prediction.confidence ?? 0) * 100}%` }}
                 />
               </div>
             </div>
-
-            {prediction.sample_size && (
-              <p className="text-xs text-gray-500">
-                Basado en <strong>{prediction.sample_size}</strong> turnos históricos ·{" "}
-                {SPECIALISTS.find(s => s.id === selectedSpecialist)?.label ?? selectedSpecialist}
-              </p>
-            )}
           </div>
         )}
       </div>
 
+      {/* Analytics Panel */}
+      <AnalyticsPanel />
+
       {/* Formulario */}
-      <form onSubmit={handleSubmit} className="bg-white rounded-card shadow-sm p-5 flex flex-col gap-4">
-        <h2 className="font-bold text-ink text-base">Registrar atención</h2>
+      <form onSubmit={handleSubmit} className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 flex flex-col gap-4">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xl">📝</span>
+          <h2 className="font-bold text-[#1A1A2E] text-base">Registrar atención</h2>
+        </div>
 
         <Field label="Número de turno" htmlFor="appointmentId">
           <input
             id="appointmentId"
             name="appointmentId"
             type="text"
-            placeholder="Ej: 001, 002, A-15..."
+            placeholder="Ej: A-15"
             value={form.appointmentId}
             onChange={handleChange}
             className={inputCls}
           />
-          <p className="text-[10px] text-gray-400 mt-1">
-            Este número identifica el turno del día. Lo generás vos en tu sistema actual.
-          </p>
         </Field>
 
-        <Field label="DNI o código de paciente" htmlFor="patientDNI">
+        <Field label="DNI del paciente" htmlFor="patientDNI">
           <div className="relative">
             <input
               id="patientDNI"
@@ -316,75 +303,80 @@ export function ClinicView({ session, onLogout }) {
               className={inputCls}
             />
             {resolvingDNI && (
-              <div className="absolute right-3 top-3 w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <div className="absolute right-3 top-3 w-4 h-4 border-2 border-[#7F77DD] border-t-transparent rounded-full animate-spin" />
             )}
           </div>
           {patientName && (
-            <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
-              <span>✅</span> {patientName}
-            </p>
+            <div className="mt-2 inline-flex items-center gap-1.5 bg-[#22C55E]/10 px-3 py-1.5 rounded-[8px]">
+              <span className="text-[12px]">✅</span>
+              <span className="text-[12px] font-bold text-[#22C55E]">{patientName}</span>
+            </div>
           )}
         </Field>
 
-        <Field label="Hora programada del turno" htmlFor="scheduledDatetime">
-          <input
-            id="scheduledDatetime"
-            name="scheduledDatetime"
-            type="datetime-local"
-            value={form.scheduledDatetime}
-            onChange={handleChange}
-            className={inputCls}
-          />
-        </Field>
-
-        <Field label="Hora real de atención" htmlFor="actualDatetime">
-          <input
-            id="actualDatetime"
-            name="actualDatetime"
-            type="datetime-local"
-            value={form.actualDatetime}
-            onChange={handleChange}
-            className={inputCls}
-          />
-        </Field>
+        <div className="flex gap-3">
+          <Field label="Programada" htmlFor="scheduledDatetime" className="flex-1">
+            <input
+              id="scheduledDatetime"
+              name="scheduledDatetime"
+              type="time" // Simplified for demo
+              value={form.scheduledDatetime.split('T')[1]?.substring(0, 5) || "09:00"}
+              onChange={(e) => {
+                const datePart = form.scheduledDatetime.split('T')[0];
+                setForm(f => ({ ...f, scheduledDatetime: `${datePart}T${e.target.value}` }));
+              }}
+              className={inputCls}
+            />
+          </Field>
+          <Field label="Real" htmlFor="actualDatetime" className="flex-1">
+            <input
+              id="actualDatetime"
+              name="actualDatetime"
+              type="time" // Simplified for demo
+              value={form.actualDatetime.split('T')[1]?.substring(0, 5) || "09:15"}
+              onChange={(e) => {
+                const datePart = form.actualDatetime.split('T')[0];
+                setForm(f => ({ ...f, actualDatetime: `${datePart}T${e.target.value}` }));
+              }}
+              className={inputCls}
+            />
+          </Field>
+        </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-4 rounded-full bg-primary text-white font-bold text-base disabled:opacity-60 flex items-center justify-center gap-2 active:scale-95 transition-transform mt-2"
+          className="w-full mt-2 py-3.5 rounded-[12px] bg-[#7F77DD] text-white font-bold text-[15px] disabled:opacity-60 flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-[0_4px_12px_rgba(127,119,221,0.3)]"
         >
           {loading ? (
-            <>
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Registrando…
-            </>
+            <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : (
-            "Registrar atención"
+            "Registrar y emitir puntos"
           )}
         </button>
       </form>
 
       {/* Resultado */}
       {result && (
-        <div className="bg-green-50 border border-green-200 rounded-card p-5 flex flex-col items-center gap-2 text-center">
-          <span className="text-4xl mb-1">✅</span>
-          <h3 className="font-bold text-green-800 text-lg">Turno registrado</h3>
-          <p className="text-sm text-green-700">
-            El paciente <strong>{result.patientName}</strong> recibió <strong>{parseFloat(result.pointsAwarded)} WaitPoints</strong>.
+        <div className="bg-[#22C55E]/10 border border-[#22C55E]/20 rounded-[16px] p-5 flex flex-col items-center gap-2 text-center animate-fade-in">
+          <span className="text-4xl mb-1">🎉</span>
+          <h3 className="font-black text-[#22C55E] text-lg">Turno registrado</h3>
+          <p className="text-[13px] font-medium text-[#1A1A2E]">
+            {result.patientName} sumó <span className="font-black text-[#7F77DD]">{parseFloat(result.pointsAwarded)} WaitPoints</span>.
           </p>
         </div>
       )}
 
       {/* Historial */}
       {history.length > 0 && (
-        <div className="bg-white rounded-card shadow-sm p-5">
-          <h3 className="font-bold text-ink text-sm mb-3">Últimos registros</h3>
+        <div className="bg-transparent mb-4">
+          <h3 className="font-bold text-gray-500 text-[13px] uppercase tracking-widest mb-3 px-1">Últimos registros</h3>
           <ul className="flex flex-col gap-2">
             {history.map((h, i) => (
-              <li key={i} className="flex items-center justify-between">
+              <li key={i} className="bg-white rounded-[12px] p-3 flex items-center justify-between shadow-sm border border-gray-100">
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-ink">Turno: {h.id}</span>
-                  <span className="text-xs text-gray-400">{h.time}</span>
+                  <span className="text-[14px] font-black text-[#1A1A2E]">Turno {h.id}</span>
+                  <span className="text-[11px] font-bold text-gray-400">{h.time}</span>
                 </div>
                 <PointsBadge points={h.points} delayMinutes={h.delayMinutes} />
               </li>
@@ -396,15 +388,86 @@ export function ClinicView({ session, onLogout }) {
   );
 }
 
+// ── Analytics Component ───────────────────────────────────────────────────────
+function AnalyticsPanel() {
+  const [data, setData] = useState({
+    metrics: { turnos: 847, promedio: 28, puntual: 23, wp: 42350 },
+    hourly: [10, 20, 45, 30, 15, 5, 25, 40],
+    recent: [
+      { id: "A-15", delay: 45 },
+      { id: "A-14", delay: 10 },
+      { id: "A-13", delay: 0 },
+    ]
+  });
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/analytics/clinic`)
+      .then(r => r.json())
+      .then(d => { if (d.success) setData(d.data); })
+      .catch(() => { });
+  }, []);
+
+  const maxVal = Math.max(...data.hourly);
+
+  return (
+    <div className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 flex flex-col gap-5">
+      <div className="flex items-center gap-2">
+        <span className="text-xl">📊</span>
+        <h2 className="font-bold text-[#1A1A2E] text-base">Analytics de la clínica</h2>
+      </div>
+
+      {/* 4 Metrics Grid */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-[#F8F7FF] rounded-[12px] p-3 border border-[#7F77DD]/10">
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Turnos mes</p>
+          <p className="text-xl font-black text-[#1A1A2E] mt-1">{data.metrics.turnos}</p>
+        </div>
+        <div className="bg-[#F8F7FF] rounded-[12px] p-3 border border-[#7F77DD]/10">
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Promedio</p>
+          <p className="text-xl font-black text-[#1A1A2E] mt-1">{data.metrics.promedio} <span className="text-xs">min</span></p>
+        </div>
+        <div className="bg-[#22C55E]/5 rounded-[12px] p-3 border border-[#22C55E]/20">
+          <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest">% Puntual</p>
+          <p className="text-xl font-black text-[#22C55E] mt-1">{data.metrics.puntual}%</p>
+        </div>
+        <div className="bg-[#7F77DD]/5 rounded-[12px] p-3 border border-[#7F77DD]/20">
+          <p className="text-[10px] font-bold text-[#7F77DD] uppercase tracking-widest">WP Emitidos</p>
+          <p className="text-xl font-black text-[#7F77DD] mt-1">{data.metrics.wp.toLocaleString('es-AR')}</p>
+        </div>
+      </div>
+
+      {/* Simple Bar Chart */}
+      <div>
+        <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-3">Demora por hora (hoy)</p>
+        <div className="flex items-end justify-between h-24 gap-1 px-1">
+          {data.hourly.map((val, i) => (
+            <div key={i} className="flex flex-col items-center justify-end w-full gap-1 group relative">
+              <div
+                className="w-full bg-[#7F77DD] rounded-t-sm transition-all duration-500 hover:bg-[#9B8FE8]"
+                style={{ height: `${Math.max(10, (val / maxVal) * 100)}%` }}
+              />
+              <span className="text-[9px] font-bold text-gray-400">{i + 9}h</span>
+              <div className="absolute -top-6 bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+                {val}m
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const inputCls =
-  "w-full border border-gray-200 rounded-xl px-4 py-3 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+  "w-full bg-[#F8F7FF] border border-gray-200 rounded-[12px] px-4 py-3 text-[#1A1A2E] text-[14px] font-medium focus:outline-none focus:border-[#7F77DD] focus:ring-1 focus:ring-[#7F77DD] transition-all";
 
-function Field({ label, htmlFor, children }) {
+function Field({ label, htmlFor, children, className = "" }) {
   return (
-    <div>
-      <label htmlFor={htmlFor} className="text-xs text-gray-500 font-medium mb-1 block">
+    <div className={className}>
+      <label htmlFor={htmlFor} className="text-[11px] text-gray-500 font-bold uppercase tracking-widest mb-1.5 block px-1">
         {label}
       </label>
       {children}
