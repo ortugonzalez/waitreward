@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const { supabase } = require('../lib/supabase')
+const { getLevel, getNextLevel, getProgressToNextLevel, LEVELS } = require('../lib/levels')
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5175'
 
@@ -123,6 +124,33 @@ router.post('/redeem-qr', async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, message: 'Error procesando QR' })
   }
+})
+
+// GET /api/rewards/levels
+// Returns all levels with full description
+router.get('/levels', (_req, res) => {
+  res.json({ success: true, levels: LEVELS })
+})
+
+// GET /api/rewards/levels/:points
+// Returns current level, next level, and progress for a given points amount
+router.get('/levels/:points', (req, res) => {
+  const points = parseInt(req.params.points, 10)
+  if (isNaN(points) || points < 0) {
+    return res.status(400).json({ success: false, error: 'Puntos inválidos' })
+  }
+  const current  = getLevel(points)
+  const next     = getNextLevel(points)
+  const progress = getProgressToNextLevel(points)
+  res.json({
+    success: true,
+    points,
+    current,
+    next: next
+      ? { ...next, pointsNeeded: next.minPoints - points }
+      : null,
+    progressPercent: progress,
+  })
 })
 
 module.exports = router

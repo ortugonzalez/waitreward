@@ -4,6 +4,7 @@ const { contractClinic, contractRead } = require("../lib/contract");
 const { PATIENTS } = require("../lib/patients");
 const { supabase } = require("../lib/supabase");
 const { sendPushToWallet, notifyPatientTurnApproaching } = require("../lib/push");
+const { getLevel } = require("../lib/levels");
 
 const router = Router();
 
@@ -122,17 +123,56 @@ router.post("/", async (req, res, next) => {
       .then(() => {})
       .catch((e) => console.error("[settle] Supabase log error:", e.message));
 
-    // ── Notificación de puntos ganados (non-blocking) ──────────────────────
+    // ── Notificación de puntos ganados + nivel (non-blocking) ─────────────
     if (Number(pointsAwarded) > 0) {
       const pts = Math.round(parseFloat(ethers.formatEther(pointsAwarded)));
       const delay = Number(delayMinutes);
       const discountARS = (pts / 100).toFixed(2);
-      sendPushToWallet(patientWallet, {
-        title: `¡Recibiste ${pts} WaitPoints! 🎉`,
-        body: `Te esperaste ${delay} min. Tenés $${discountARS} en descuentos disponibles.`,
-        tag: `appt-${appointmentId}`,
-        url: "/",
-      }).catch(() => {});
+
+      // Read balance before this mint to detect level-up
+      // (pointsAwarded is the amount just minted, balance now includes it)
+      try {
+        const rawAfter  = await contractRead.balanceOf(patientWallet);
+        const ptsAfter  = Math.round(Number(ethers.formatEther(rawAfter)));
+        const ptsBefore = Math.max(0, ptsAfter - pts);
+        const levelBefore = getLevel(ptsBefore);
+        const levelAfter  = getLevel(ptsAfter);
+
+        if (levelBefore.name !== levelAfter.name) {
+          // Level-up notification — send first, more impactful
+          sendPushToWallet(patientWallet, {
+            title: `¡Subiste a ${levelAfter.emoji} ${levelAfter.name}!`,
+            body: `Desbloqueaste nuevos beneficios. ¡Seguí sumando puntos!`,
+            tag: "level-up",
+            url: "/",
+          }).catch(() => {});
+
+          // Persist level change in Supabase (non-blocking)
+          const { supabase } = require("../lib/supabase");
+          supabase.from("wr_level_history").insert({
+            patient_wallet:   patientWallet.toLowerCase(),
+            from_level:       levelBefore.name,
+            to_level:         levelAfter.name,
+            points_at_change: ptsAfter,
+          }).then(() => {}).catch(() => {});
+        } else {
+          // Standard points notification
+          sendPushToWallet(patientWallet, {
+            title: `¡Recibiste ${pts} WaitPoints! 🎉`,
+            body: `Te esperaste ${delay} min. Tenés $${discountARS} en descuentos disponibles.`,
+            tag: `appt-${appointmentId}`,
+            url: "/",
+          }).catch(() => {});
+        }
+      } catch (_) {
+        // Fallback: send standard notification if balance read fails
+        sendPushToWallet(patientWallet, {
+          title: `¡Recibiste ${pts} WaitPoints! 🎉`,
+          body: `Te esperaste ${delay} min. Tenés $${discountARS} en descuentos disponibles.`,
+          tag: `appt-${appointmentId}`,
+          url: "/",
+        }).catch(() => {});
+      }
     }
 
     return res.json(response);
