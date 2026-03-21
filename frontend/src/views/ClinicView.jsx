@@ -29,7 +29,7 @@ function toLocalDateTimeValue(date = new Date()) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export function ClinicView() {
+export function ClinicView({ session, onLogout }) {
   const [form, setForm] = useState({
     appointmentId: "",
     patientDNI: "",
@@ -176,6 +176,19 @@ export function ClinicView() {
 
   return (
     <div className="flex flex-col gap-4 px-4">
+      {/* Saludo y logout */}
+      {session && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-bold text-ink">Hola, {session.name} 👋</p>
+          <button
+            onClick={onLogout}
+            className="text-xs text-gray-400 hover:text-red-400 transition-colors"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      )}
+
       {/* IA Prediction */}
       <div className="bg-white rounded-card shadow-sm p-5 flex flex-col gap-3">
         <div className="flex items-center gap-2">
