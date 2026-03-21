@@ -3,148 +3,148 @@
 ## Requisitos
 
 - Node.js 18+
+- Python 3.8+ (opcional, para módulo de IA)
 - Git
 
 ---
 
-## Clonar el repo
+## Arquitectura
 
-```bash
-git clone https://github.com/ortugonzalez/waitreward.git
-cd waitreward
-npm install
+El contrato ya está desplegado en **Avalanche Fuji Testnet**. No hace falta levantar nodo blockchain local.
+
+```
+CONTRACT: 0xAad6125bE3E57473fb575af47c4B96253c1bEEEa  (Fuji)
+CLINIC:   0xb586790F5684d6E40a7e4dE353d08053D3eF9b41  (deployer/autorizado)
 ```
 
 ---
 
-## Levantar el sistema (3 terminales)
+## Configurar variables de entorno
 
-### Terminal 1 — Blockchain local
-
-```bash
-cd waitreward
-npx hardhat node
-```
-
-> Dejar corriendo. No cerrar. Muestra 20 cuentas de prueba con ETH.
-
----
-
-### Terminal 2 — Deploy + Backend
-
-**1. Deployar el contrato:**
-
-```bash
-cd waitreward
-npx hardhat run scripts/deploy.js --network localhost
-```
-
-Copiar el `CONTRACT_ADDRESS` que aparece en la salida, por ejemplo:
-```
-✅ WaitReward deployed to: 0x5FbDB2315678afecb367f032d93F642f64180aa3
-```
-
-**2. Crear `backend/.env`** con ese valor:
+### `backend/.env`
 
 ```
-RPC_URL=http://127.0.0.1:8545
-CONTRACT_ADDRESS=<pegar aquí>
-CLINIC_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-PATIENT_PRIVATE_KEY=0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
+RPC_URL=https://api.avax-test.network/ext/bc/C/rpc
+CONTRACT_ADDRESS=0xAad6125bE3E57473fb575af47c4B96253c1bEEEa
+CLINIC_PRIVATE_KEY=<clave privada de la wallet clínica>
 PORT=3001
 ```
 
-**3. Arrancar el backend:**
+### `frontend/.env`
+
+```
+VITE_API_URL=http://localhost:3001
+VITE_CONTRACT_ADDRESS=0xAad6125bE3E57473fb575af47c4B96253c1bEEEa
+```
+
+---
+
+## Levantar el sistema (2 terminales)
+
+### Terminal 1 — Backend
 
 ```bash
-cd backend
+cd waitreward/backend
 npm install
 npm start
 ```
 
-> Verificar en: http://localhost:3001/health
+> Verificar: `GET http://localhost:3001/health`
 
 ---
 
-### Terminal 3 — Frontend
-
-**1. Crear `frontend/.env`:**
-
-```
-VITE_API_URL=http://localhost:3001
-```
-
-**2. Arrancar:**
+### Terminal 2 — Frontend
 
 ```bash
-cd frontend
+cd waitreward/frontend
 npm install
 npm run dev
 ```
+
+> Abrir: http://localhost:5175
+
+---
+
+### Terminal 3 (opcional) — Módulo de IA
+
+```bash
+cd waitreward/ai-module
+pip install flask numpy
+python app.py
+```
+
+> Corre en http://localhost:5000. Si no está levantado, el panel de predicción muestra "Módulo de IA no disponible".
 
 ---
 
 ## URLs
 
-| Servicio   | URL                              |
-|------------|----------------------------------|
-| Frontend   | http://localhost:5173            |
-| Backend    | http://localhost:3001            |
-| Health     | http://localhost:3001/health     |
+| Servicio   | URL                                        |
+|------------|--------------------------------------------|
+| Frontend   | http://localhost:5175                      |
+| Backend    | http://localhost:3001                      |
+| Health     | http://localhost:3001/health               |
+| AI module  | http://localhost:5000/health (opcional)    |
 
 ---
 
-## Para Juliana — Frontend
+## Endpoints del backend
 
-Tu trabajo está en `frontend/src/`:
-
-```
-frontend/src/
-  views/       ← PatientView, ClinicView, CommerceView
-  components/  ← Navigation, QRModal, PointsBadge
-  hooks/       ← useWallet.js
-  api/         ← client.js (llamadas al backend)
-```
-
-Para subir cambios:
-
-```bash
-git add .
-git commit -m "descripción del cambio"
-git push
-```
+| Método | Ruta                              | Descripción                            |
+|--------|-----------------------------------|----------------------------------------|
+| GET    | /health                           | Estado del servicio                    |
+| POST   | /api/settle                       | Registrar atención y otorgar puntos    |
+| GET    | /api/points/:wallet               | Saldo de WaitPoints de un paciente     |
+| POST   | /api/redeem                       | Canjear puntos (vía backend)           |
+| GET    | /api/commerce/:address            | Estado de un comercio                  |
+| GET    | /api/commerce/search?name=...     | Buscar comercio por nombre             |
+| GET    | /api/patients/:dni                | Resolver DNI → nombre y wallet         |
+| GET    | /api/ai/predict/:clinicId/:spec   | Predicción de demora IA                |
+| GET    | /api/ai/metrics/:clinicId         | Métricas históricas IA                 |
 
 ---
 
-## Para Enzo — Backend
+## Pacientes de demo
 
-Tu trabajo está en `backend/`:
-
-```
-backend/
-  routes/   ← settle.js, points.js, redeem.js, commerce.js
-  lib/      ← contract.js (conexión al contrato)
-  index.js  ← servidor Express, middleware, rutas
-```
-
-Mismo proceso:
-
-```bash
-git add .
-git commit -m "descripción del cambio"
-git push
-```
+| DNI      | Nombre         | Wallet                                       |
+|----------|----------------|----------------------------------------------|
+| 12345678 | María García   | 0x70997970C51812dc3A010C7d01b50e0d17dc79C8   |
+| 87654321 | Juan Pérez     | 0xb586790F5684d6E40a7e4dE353d08053D3eF9b41   |
+| 11223344 | Ana Martínez   | 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC   |
 
 ---
 
-## Cuentas de prueba (Hardhat)
+## Comercios de demo (registrados en Fuji)
 
-Estas cuentas tienen 10.000 ETH en la red local.
+| Nombre             | Dirección                                    |
+|--------------------|----------------------------------------------|
+| Farmacia Del Pueblo | 0xb586790F5684d6E40a7e4dE353d08053D3eF9b41  |
+| Café Central        | 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC  |
 
-| Rol       | Address                                      | Private Key |
-|-----------|----------------------------------------------|-------------|
-| Deployer / Clínica | `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266` | `0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80` |
-| Paciente  | `0x70997970C51812dc3A010C7d01b50e0d17dc79C8` | `0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d` |
-| Comercio  | `0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC` | `0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a` |
+---
 
-> ⚠️ Solo usar en localhost. Nunca en mainnet ni Fuji con fondos reales.
+## Flujo de demo completo
+
+1. **Paciente llega tarde** a una consulta médica
+2. En el panel **Clínica** (tab médico): ingresar DNI del paciente, hora programada y hora real → "Registrar atención"
+3. El backend calcula la demora, llama al contrato en Fuji y otorga WaitPoints
+4. El paciente ve sus puntos en el panel **Paciente** (requiere MetaMask con Fuji configurado)
+5. El paciente canjea puntos en **Farmacia Del Pueblo** → transacción en MetaMask
+
+---
+
+## MetaMask — configurar Fuji
+
+| Campo        | Valor                                          |
+|--------------|------------------------------------------------|
+| Red          | Avalanche Fuji C-Chain                         |
+| RPC URL      | https://api.avax-test.network/ext/bc/C/rpc     |
+| Chain ID     | 43113                                          |
+| Símbolo      | AVAX                                           |
+| Explorer     | https://testnet.snowtrace.io                   |
+
+AVAX de prueba gratis: https://faucet.avax.network/
+
+---
+
+> ⚠️ Las claves privadas del `.env` son solo para demo. Nunca exponer en producción.
