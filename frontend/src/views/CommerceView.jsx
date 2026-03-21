@@ -15,8 +15,13 @@ const MOCK_REDEMPTIONS = [
   { points: 150, date: "Ayer 11:20", patient: "Luis M." },
 ];
 
-export function CommerceView() {
+export function CommerceView({ session, onLogout }) {
   const { address, connect, isConnecting } = useWallet();
+
+  // ── QR Scanner state ───────────────────────────────────────────────────────
+  const [qrInput, setQrInput]       = useState("");
+  const [qrResult, setQrResult]     = useState(null);  // { success, message, pointsRedeemed, discountValue }
+  const [qrLoading, setQrLoading]   = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [commerce, setCommerce] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -31,6 +36,31 @@ export function CommerceView() {
   const [showRegister, setShowRegister] = useState(false);
   const [registerName, setRegisterName] = useState("");
   const [registering, setRegistering] = useState(false);
+
+  // ── Validar QR del paciente ────────────────────────────────────────────────
+  const handleValidateQR = async (e) => {
+    e.preventDefault();
+    if (!qrInput.trim()) return toast.error("Ingresá el código QR");
+    setQrLoading(true);
+    setQrResult(null);
+    try {
+      const res = await fetch(`${API_URL}/api/rewards/redeem-qr`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ qrCode: qrInput.trim() }),
+      });
+      const data = await res.json();
+      setQrResult(data);
+      if (data.success) {
+        toast.success("Canje exitoso");
+        setQrInput("");
+      }
+    } catch {
+      setQrResult({ success: false, message: "Error de conexión" });
+    } finally {
+      setQrLoading(false);
+    }
+  };
 
   // ── Fetch commerce data by name ─────────────────────────────────────────────
   const fetchCommerceByName = useCallback(async (nameStr) => {
@@ -164,6 +194,63 @@ export function CommerceView() {
 
   return (
     <div className="flex flex-col gap-4 px-4">
+
+      {/* ── Escanear QR del paciente ─────────────────────────────────────── */}
+      <div className="bg-white rounded-card shadow-sm p-5 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">📲</span>
+            <h2 className="font-bold text-ink text-base">Escanear QR</h2>
+          </div>
+          {session && (
+            <button onClick={onLogout} className="text-xs text-gray-400 hover:text-red-400 transition-colors">
+              Salir
+            </button>
+          )}
+        </div>
+        <p className="text-xs text-gray-400">
+          Ingresá el código QR del paciente para validar el canje
+        </p>
+        <form onSubmit={handleValidateQR} className="flex gap-2">
+          <input
+            type="text"
+            placeholder="WR-1234567890-abc123-100"
+            value={qrInput}
+            onChange={(e) => { setQrInput(e.target.value); setQrResult(null); }}
+            className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-ink text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+          <button
+            type="submit"
+            disabled={qrLoading || !qrInput.trim()}
+            className="px-5 py-3 rounded-xl bg-primary text-white font-bold text-sm disabled:opacity-60 active:scale-95 transition-transform flex-shrink-0"
+          >
+            {qrLoading ? "…" : "Validar"}
+          </button>
+        </form>
+
+        {qrResult && (
+          <div className={`rounded-xl p-4 flex items-start gap-3 ${
+            qrResult.success
+              ? "bg-green-50 border border-green-200"
+              : "bg-red-50 border border-red-200"
+          }`}>
+            <span className="text-xl">{qrResult.success ? "✅" : "❌"}</span>
+            <div>
+              {qrResult.success ? (
+                <>
+                  <p className="text-sm font-bold text-green-800">Canje exitoso</p>
+                  <p className="text-xs text-green-700 mt-0.5">
+                    {qrResult.pointsRedeemed} puntos · Descuento: {qrResult.discountValue}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm font-bold text-red-700">{qrResult.message}</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Búsqueda */}
       <form onSubmit={handleSearch} className="bg-white rounded-card shadow-sm p-5 flex flex-col gap-3">
         <h2 className="font-bold text-ink text-base">Iniciar sesión como comercio</h2>
