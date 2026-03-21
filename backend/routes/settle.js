@@ -95,27 +95,14 @@ router.post("/", async (req, res, next) => {
       pointsAwardedRaw: pointsAwarded.toString(),
     };
 
-    // ── Persistir en Supabase (best-effort, no bloquea la respuesta) ──────────
-    if (supabase) {
-      const { data: patient } = await supabase
-        .from("users")
-        .select("id")
-        .eq("wallet_address", patientWallet)
-        .single()
-        .catch(() => ({ data: null }));
-
-      supabase.from("appointments").insert({
-        appointment_id: appointmentId,
-        patient_id: patient?.id ?? null,
-        scheduled_time: new Date(Number(scheduled) * 1000).toISOString(),
-        actual_time: new Date(Number(actual) * 1000).toISOString(),
-        delay_minutes: Number(delayMinutes),
-        points_awarded: Number(ethers.formatEther(pointsAwarded)),
-        tx_hash: receipt.hash,
-      }).then(({ error }) => {
-        if (error) console.error("[settle] Supabase insert error:", error.message);
-      });
-    }
+    // ── Persistir en Supabase (non-blocking — si falla, no afecta la tx) ────────
+    supabase.from('appointments').insert({
+      appointment_id: appointmentId,
+      patient_wallet: patientWallet,
+      delay_minutes: Number(delayMinutes),
+      points_awarded: Number(ethers.formatEther(pointsAwarded)),
+      tx_hash: receipt.hash || receipt.transactionHash
+    }).then(() => {}).catch(e => console.error('[settle] Supabase log error:', e.message));
 
     return res.json(response);
   } catch (err) {
