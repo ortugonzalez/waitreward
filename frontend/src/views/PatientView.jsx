@@ -13,46 +13,54 @@ const DEMO_COMMERCES = [
   { label: "Farmacia Del Pueblo", address: "0xb586790F5684d6E40a7e4dE353d08053D3eF9b41" },
 ];
 
-function truncate(addr) {
+function getUserName(addr) {
   if (!addr) return "";
-  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+  const lower = addr.toLowerCase();
+  if (lower === "0x70997970c51812dc3a010c7d01b50e0d17dc79c8") return "María García";
+  if (lower === "0xb586790f5684d6e40a7e4de353d08053d3ef9b41") return "Juan Pérez";
+  if (lower === "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc") return "Ana Martínez";
+  return "Usuario Invitado";
 }
 
 export function PatientView() {
   const { address, connect, disconnect, isConnecting } = useWallet();
-  const [points,       setPoints]       = useState(null);
-  const [loadingPts,   setLoadingPts]   = useState(false);
-  const [redeemAmt,    setRedeemAmt]    = useState("");
-  const [commerce,     setCommerce]     = useState(DEMO_COMMERCES[0].address);
-  const [redeeming,    setRedeeming]    = useState(false);
-  const [qrData,       setQrData]       = useState(null);
+  const [points, setPoints] = useState(null);
+  const [loadingPts, setLoadingPts] = useState(true); // Default to true handling the race condition
+  const [redeemAmt, setRedeemAmt] = useState("");
+  const [commerce, setCommerce] = useState(DEMO_COMMERCES[0].address);
+  const [redeeming, setRedeeming] = useState(false);
+  const [qrData, setQrData] = useState(null);
 
   const fetchPoints = useCallback(async () => {
-    if (!address) return;
+    if (!address) {
+      setLoadingPts(false);
+      return;
+    }
     setLoadingPts(true);
     try {
-      // Checksum address to ensure correct format for backend
       const checksummed = ethers.getAddress(address);
-      console.log("[WaitReward] Fetching points for:", checksummed);
       const data = await getPoints(checksummed);
-      console.log("[WaitReward] Points response:", data);
       setPoints(data.points ?? 0);
     } catch (err) {
       console.error("[WaitReward] Error fetching points:", err);
-      toast.error("No se pudo obtener el saldo");
+      // Fail silently to the user, just show 0 or keep loading state minimal
+      setPoints(0);
     } finally {
       setLoadingPts(false);
     }
   }, [address]);
 
-  // Carga inicial y refresco cada 15s
   useEffect(() => {
-    fetchPoints();
-    const interval = setInterval(fetchPoints, 15_000);
-    return () => clearInterval(interval);
-  }, [fetchPoints]);
+    if (address) {
+      fetchPoints();
+      const interval = setInterval(fetchPoints, 15_000);
+      return () => clearInterval(interval);
+    } else {
+      setLoadingPts(false);
+    }
+  }, [fetchPoints, address]);
 
-  // ── Canje directo via MetaMask ──────────────────────────────────────────────
+  // ── Canje ──────────────────────────────────────────────
   const handleRedeem = async () => {
     const amt = Number(redeemAmt);
     if (!amt || amt <= 0) {
@@ -63,66 +71,36 @@ export function PatientView() {
       toast.error(`Saldo insuficiente (tenés ${points} WP)`);
       return;
     }
-    if (!CONTRACT_ADDRESS) {
-      toast.error("VITE_CONTRACT_ADDRESS no configurado");
-      return;
-    }
-    if (!window.ethereum) {
-      toast.error("MetaMask no detectado");
+    if (!CONTRACT_ADDRESS || !window.ethereum) {
+      toast.error("Hubo un problema de conexión. Intentá de nuevo más tarde.");
       return;
     }
 
     setRedeeming(true);
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer   = await provider.getSigner();
+      const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, WaitRewardABI, signer);
 
       const pointsWei = ethers.parseEther(String(amt));
 
-      toast("Confirmá la transacción en MetaMask…", { icon: "🦊" });
-      const tx      = await contract.redeemPoints(commerce, pointsWei);
-      toast("Transacción enviada, esperando confirmación…", { icon: "⏳" });
-      const receipt = await tx.wait();
+      toast("Confirmando operación...", { icon: "🔐" });
+      const tx = await contract.redeemPoints(commerce, pointsWei);
+      toast("Procesando canje...", { icon: "⏳" });
+      await tx.wait();
 
       toast.success(`Canjeaste ${amt} WP exitosamente`);
 
-      // Refresco de saldo
       await fetchPoints();
       setRedeemAmt("");
-
-      // Mostrar link a Snowtrace
-      const explorerUrl = `https://testnet.snowtrace.io/tx/${receipt.hash}`;
-      toast(
-        (t) => (
-          <span>
-            Tx confirmada{" "}
-            <a href={explorerUrl} target="_blank" rel="noopener noreferrer"
-               className="underline text-primary" onClick={() => toast.dismiss(t.id)}>
-              ver en Snowtrace ↗
-            </a>
-          </span>
-        ),
-        { duration: 8000 }
-      );
     } catch (err) {
-      if (err.code === 4001 || err.code === "ACTION_REJECTED") {
-        toast.error("Transacción rechazada");
-      } else if (err.message?.includes("Insufficient balance")) {
-        toast.error("Saldo de WRT insuficiente");
-      } else if (err.message?.includes("Commerce not active")) {
-        toast.error("El comercio no está activo");
-      } else if (err.message?.includes("Commerce has insufficient deposit")) {
-        toast.error("El comercio no tiene fondos suficientes");
-      } else {
-        toast.error(err.reason || err.message || "Error en el canje");
-      }
+      console.error(err);
+      toast.error("Hubo un problema al procesar tu canje. Intentá de nuevo.");
     } finally {
       setRedeeming(false);
     }
   };
 
-  // ── Generar QR (alternativa al canje directo) ─────────────────────────────
   const handleQR = () => {
     const amt = Number(redeemAmt);
     if (!amt || amt <= 0) {
@@ -136,16 +114,15 @@ export function PatientView() {
     setQrData({ wallet: address, commerceAddress: commerce, points: amt });
   };
 
-  // ── Sin wallet ──────────────────────────────────────────────────────────────
   if (!address) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-6 px-6">
         <div className="bg-white rounded-card shadow-sm p-8 flex flex-col items-center gap-5 w-full">
           <span className="text-6xl">🧑</span>
           <div className="text-center">
-            <h2 className="text-xl font-bold text-ink">Conectá tu wallet</h2>
+            <h2 className="text-xl font-bold text-ink">Iniciá sesión</h2>
             <p className="text-sm text-gray-500 mt-1">
-              Necesitás MetaMask para ver y canjear tus WaitPoints
+              Ingresá para ver y canjear tus WaitPoints
             </p>
           </div>
           <button
@@ -153,22 +130,20 @@ export function PatientView() {
             disabled={isConnecting}
             className="w-full py-4 rounded-full bg-primary text-white font-bold text-base disabled:opacity-60 active:scale-95 transition-transform"
           >
-            {isConnecting ? "Conectando…" : "Conectar MetaMask"}
+            {isConnecting ? "Conectando…" : "Ingresar a mi cuenta"}
           </button>
         </div>
       </div>
     );
   }
 
-  // ── Con wallet ──────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-4 px-4">
       {/* Card de saldo */}
       <div className="bg-white rounded-card shadow-sm p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-xs text-gray-400 font-mono">{truncate(address)}</p>
-            <p className="text-xs text-gray-400 mt-0.5">Avalanche Fuji</p>
+            <p className="text-sm font-bold text-ink">Hola, {getUserName(address)} 👋</p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -244,7 +219,6 @@ export function PatientView() {
           </select>
         </div>
 
-        {/* Canje directo via MetaMask */}
         <button
           onClick={handleRedeem}
           disabled={redeeming || !redeemAmt}
@@ -253,14 +227,13 @@ export function PatientView() {
           {redeeming ? (
             <>
               <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Canjeando…
+              Procesando…
             </>
           ) : (
-            "Canjear con MetaMask"
+            "Canjear puntos"
           )}
         </button>
 
-        {/* QR como alternativa */}
         <button
           onClick={handleQR}
           disabled={!redeemAmt}
@@ -270,7 +243,12 @@ export function PatientView() {
         </button>
       </div>
 
-      {/* QR Modal */}
+      {/* Footer Powered By */}
+      <div className="text-center mt-2 flex justify-center items-center gap-1 opacity-50">
+        <span className="text-[10px] text-gray-500 font-medium">Powered by</span>
+        <span className="text-[10px] text-red-500 font-bold tracking-tight">AVALANCHE</span>
+      </div>
+
       <QRModal data={qrData} onClose={() => setQrData(null)} />
     </div>
   );
