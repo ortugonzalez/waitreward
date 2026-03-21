@@ -1,33 +1,27 @@
 import { useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
 import toast from "react-hot-toast";
-import { getCommerce } from "../api/client";
 import { useWallet } from "../hooks/useWallet";
 import WaitRewardABI from "../abi/WaitReward.json";
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
-
-// Comercio demo pre-registrado en Fuji
-const DEMO_COMMERCE_ADDRESS = "0xb586790F5684d6E40a7e4dE353d08053D3eF9b41";
+const API_URL = import.meta.env.VITE_API_URL;
 
 // Mock de canjes recientes para el demo
 const MOCK_REDEMPTIONS = [
-  { wallet: "0xAbCd...5678", points: 150, date: "Hoy 10:32", patient: "María G." },
-  { wallet: "0x1234...7890", points: 50, date: "Hoy 09:15", patient: "Carlos R." },
-  { wallet: "0x9876...5432", points: 300, date: "Ayer 18:47", patient: "Ana L." },
-  { wallet: "0xFeDc...3210", points: 150, date: "Ayer 11:20", patient: "Luis M." },
+  { points: 150, date: "Hoy 10:32", patient: "María G." },
+  { points: 50, date: "Hoy 09:15", patient: "Carlos R." },
+  { points: 300, date: "Ayer 18:47", patient: "Ana L." },
+  { points: 150, date: "Ayer 11:20", patient: "Luis M." },
 ];
-
-function truncate(addr) {
-  if (!addr) return "";
-  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
-}
 
 export function CommerceView() {
   const { address, connect, isConnecting } = useWallet();
   const [searchInput, setSearchInput] = useState("");
   const [commerce, setCommerce] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Guardamos la address internamente para las transacciones
   const [activeAddr, setActiveAddr] = useState("");
 
   // Modals
@@ -38,40 +32,68 @@ export function CommerceView() {
   const [registerName, setRegisterName] = useState("");
   const [registering, setRegistering] = useState(false);
 
-  // ── Fetch commerce data ─────────────────────────────────────────────────────
-  const fetchCommerce = useCallback(async (addr) => {
-    if (!addr) return;
+  // ── Fetch commerce data by name ─────────────────────────────────────────────
+  const fetchCommerceByName = useCallback(async (nameStr) => {
+    if (!nameStr) return;
     setLoading(true);
     setCommerce(null);
     try {
-      const data = await getCommerce(addr);
+      const res = await fetch(`${API_URL}/api/commerce/search?name=${encodeURIComponent(nameStr)}`);
+      const data = await res.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Comercio no encontrado");
+      }
+
       setCommerce(data);
-      setActiveAddr(addr);
+      setActiveAddr(data.address);
     } catch (err) {
-      console.error("[WaitReward] Commerce fetch error:", err);
+      console.error("[WaitReward] Commerce search error:", err);
       toast.error(err.message || "Comercio no encontrado");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Auto-load el comercio demo al montar
+  // ── Fetch commerce data by address (used for refreshing after tx) ────────────
+  const fetchCommerceByAddress = useCallback(async (addr) => {
+    if (!addr) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/commerce/${addr}`);
+      const data = await res.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Error al cargar datos");
+      }
+
+      setCommerce(prev => ({
+        ...prev, // Mantener datos como el emoji
+        ...data
+      }));
+    } catch (err) {
+      console.error("[WaitReward] Commerce fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Auto-load el comercio demo al montar (por nombre)
   useEffect(() => {
-    fetchCommerce(DEMO_COMMERCE_ADDRESS);
-  }, [fetchCommerce]);
+    fetchCommerceByName("Farmacia Del Pueblo");
+  }, [fetchCommerceByName]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (!searchInput.trim()) return toast.error("Ingresá una dirección");
-    fetchCommerce(searchInput.trim());
+    if (!searchInput.trim()) return toast.error("Ingresá el nombre del comercio");
+    fetchCommerceByName(searchInput.trim());
   };
 
-  // ── Depositar fondos via MetaMask ───────────────────────────────────────────
+  // ── Depositar fondos ───────────────────────────────────────────
   const handleDeposit = async () => {
     const amt = Number(depositAmt);
     if (!amt || amt <= 0) return toast.error("Ingresá un monto válido");
-    if (!CONTRACT_ADDRESS) return toast.error("Contrato no configurado");
-    if (!window.ethereum) return toast.error("MetaMask no detectado");
+    if (!CONTRACT_ADDRESS || !window.ethereum) return toast.error("Error de conexión");
 
     setDepositing(true);
     try {
@@ -80,32 +102,28 @@ export function CommerceView() {
       const contract = new ethers.Contract(CONTRACT_ADDRESS, WaitRewardABI, signer);
 
       const value = ethers.parseEther(String(amt));
-      toast("Confirmá la transacción en MetaMask…", { icon: "🦊" });
+      toast("Confirmando recarga...", { icon: "💳" });
       const tx = await contract.depositForRedemptions({ value });
-      toast("Transacción enviada, esperando confirmación…", { icon: "⏳" });
+      toast("Procesando recarga...", { icon: "⏳" });
       await tx.wait();
 
-      toast.success(`Depositaste ${amt} AVAX exitosamente`);
+      toast.success(`Recargaste saldo exitosamente`);
       setShowDeposit(false);
       setDepositAmt("");
       // Refresh data
-      fetchCommerce(activeAddr);
+      fetchCommerceByAddress(activeAddr);
     } catch (err) {
-      if (err.code === 4001 || err.code === "ACTION_REJECTED") {
-        toast.error("Transacción rechazada");
-      } else {
-        toast.error(err.reason || err.message || "Error al depositar");
-      }
+      console.error(err);
+      toast.error("Hubo un problema al recargar saldo. Intentá de nuevo.");
     } finally {
       setDepositing(false);
     }
   };
 
-  // ── Registrar nuevo comercio via MetaMask ───────────────────────────────────
+  // ── Registrar nuevo comercio ───────────────────────────────────
   const handleRegister = async () => {
     if (!registerName.trim()) return toast.error("Ingresá el nombre del comercio");
-    if (!CONTRACT_ADDRESS) return toast.error("Contrato no configurado");
-    if (!window.ethereum) return toast.error("MetaMask no detectado");
+    if (!CONTRACT_ADDRESS || !window.ethereum) return toast.error("Error de conexión");
 
     setRegistering(true);
     try {
@@ -113,42 +131,24 @@ export function CommerceView() {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, WaitRewardABI, signer);
 
-      // registerCommerce requiere enviar 0.01 ETH (MONTHLY_FEE)
       const fee = ethers.parseEther("0.01");
-      toast("Confirmá la transacción en MetaMask (0.01 AVAX)…", { icon: "🦊" });
+      toast("Abonando membresía...", { icon: "💳" });
       const tx = await contract.registerCommerce(registerName.trim(), { value: fee });
-      toast("Registrando comercio…", { icon: "⏳" });
-      const receipt = await tx.wait();
+      toast("Completando registro...", { icon: "⏳" });
+      await tx.wait();
 
-      toast.success(`Comercio "${registerName}" registrado exitosamente`);
+      toast.success(`¡Bienvenido a WaitReward, ${registerName}!`);
       setShowRegister(false);
       setRegisterName("");
 
-      // Load the newly registered commerce
+      // El registro fue exitoso, intentamos buscar el nuevo comercio por nombre
+      // Ojo: en backend el backend/lib/commerces.js es estático, así que buscarlo
+      // podría fallar si es MOCK, pero fetchCommerceByAddress lo trae del contrato.
       const signerAddr = await signer.getAddress();
-      fetchCommerce(signerAddr);
-
-      // Show tx link
-      toast(
-        (t) => (
-          <span>
-            Tx confirmada{" "}
-            <a href={`https://testnet.snowtrace.io/tx/${receipt.hash}`} target="_blank" rel="noopener noreferrer"
-              className="underline text-primary" onClick={() => toast.dismiss(t.id)}>
-              ver en Snowtrace ↗
-            </a>
-          </span>
-        ),
-        { duration: 8000 }
-      );
+      fetchCommerceByAddress(signerAddr);
     } catch (err) {
-      if (err.code === 4001 || err.code === "ACTION_REJECTED") {
-        toast.error("Transacción rechazada");
-      } else if (err.message?.includes("Already registered")) {
-        toast.error("Este comercio ya está registrado");
-      } else {
-        toast.error(err.reason || err.message || "Error al registrar");
-      }
+      console.error(err);
+      toast.error("Hubo un problema al registrarte. Intentá de nuevo revisando tu saldo.");
     } finally {
       setRegistering(false);
     }
@@ -160,28 +160,27 @@ export function CommerceView() {
     })
     : null;
 
-  // Stats totales (mock)
   const totalRedemptions = MOCK_REDEMPTIONS.reduce((sum, r) => sum + r.points, 0);
 
   return (
     <div className="flex flex-col gap-4 px-4">
       {/* Búsqueda */}
       <form onSubmit={handleSearch} className="bg-white rounded-card shadow-sm p-5 flex flex-col gap-3">
-        <h2 className="font-bold text-ink text-base">Consultar comercio</h2>
+        <h2 className="font-bold text-ink text-base">Iniciar sesión como comercio</h2>
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder="0x... dirección del comercio"
+            placeholder="Ej: Farmacia Del Pueblo"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 font-mono"
+            className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-ink text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
           <button
             type="submit"
             disabled={loading}
             className="px-5 py-3 rounded-xl bg-primary text-white font-bold text-sm disabled:opacity-60 active:scale-95 transition-transform flex-shrink-0"
           >
-            {loading ? "…" : "🔍"}
+            {loading ? "…" : "Ingresar"}
           </button>
         </div>
       </form>
@@ -201,29 +200,28 @@ export function CommerceView() {
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <span className="text-2xl">🏪</span>
+                  <span className="text-2xl">{commerce.emoji || "🏪"}</span>
                 </div>
                 <div>
                   <h3 className="text-lg font-black text-ink">{commerce.name}</h3>
-                  <p className="text-xs font-mono text-gray-400 mt-0.5">{truncate(activeAddr)}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{commerce.category || "Comercio Adherido"}</p>
                 </div>
               </div>
               <span
-                className={`px-3 py-1 rounded-full text-xs font-bold ${commerce.subscriptionActive
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
+                className={`px-3 py-1 rounded-full text-xs font-bold ${commerce.subscriptionActive ?? commerce.active
+                  ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-700"
                   }`}
               >
-                {commerce.subscriptionActive ? "✅ Activo" : "❌ Expirado"}
+                {(commerce.subscriptionActive ?? commerce.active) ? "✅ Activo" : "❌ Inactivo"}
               </span>
             </div>
 
             {/* Stats grid */}
             <div className="grid grid-cols-3 gap-2">
               <StatCard
-                label="Depósito"
-                value={`${commerce.depositedFunds?.toFixed(4)}`}
-                unit="AVAX"
+                label="Saldo"
+                value={`$${((commerce.depositedFunds || 0) * 35).toFixed(0)}`} // Multiplicamos aprox x35
                 icon="💰"
               />
               <StatCard
@@ -233,9 +231,8 @@ export function CommerceView() {
                 icon="🔄"
               />
               <StatCard
-                label="Vence"
+                label="Suscripción"
                 value={expiryDate ?? "—"}
-                unit=""
                 icon="📅"
               />
             </div>
@@ -243,13 +240,12 @@ export function CommerceView() {
             {/* Progress bar del depósito */}
             <div>
               <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>Fondos disponibles</span>
-                <span className="font-bold text-ink">{commerce.depositedFunds?.toFixed(4)} AVAX</span>
+                <span>Fondos para respaldar canjes</span>
               </div>
               <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-primary to-primary-dark rounded-full transition-all"
-                  style={{ width: `${Math.min((commerce.depositedFunds / 0.1) * 100, 100)}%` }}
+                  style={{ width: `${Math.min(((commerce.depositedFunds || 0) / 0.1) * 100, 100)}%` }}
                 />
               </div>
             </div>
@@ -260,10 +256,10 @@ export function CommerceView() {
                 onClick={() => setShowDeposit(true)}
                 className="flex-1 py-3 rounded-full bg-primary text-white font-bold text-sm active:scale-95 transition-transform"
               >
-                💰 Depositar
+                💰 Recargar saldo
               </button>
               <button
-                onClick={() => fetchCommerce(activeAddr)}
+                onClick={() => fetchCommerceByAddress(activeAddr)}
                 className="px-4 py-3 rounded-full border-2 border-gray-200 text-gray-500 font-bold text-sm active:scale-95 transition-transform"
               >
                 ↻
@@ -274,7 +270,7 @@ export function CommerceView() {
           {/* WaitPoints canjeados (resumen) */}
           <div className="bg-gradient-to-br from-primary to-primary-dark rounded-card shadow-sm p-5 text-white">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-sm opacity-90">WaitPoints canjeados</h3>
+              <h3 className="font-bold text-sm opacity-90">WaitPoints recibidos</h3>
               <span className="text-xs opacity-70">Últimos 7 días</span>
             </div>
             <div className="flex items-end gap-2">
@@ -282,7 +278,7 @@ export function CommerceView() {
               <span className="text-sm opacity-80 mb-1">WP</span>
             </div>
             <p className="text-xs opacity-70 mt-1">
-              = ${(totalRedemptions / 100).toFixed(2)} en descuentos otorgados
+              = ${(totalRedemptions / 100).toFixed(2)} generados en ventas
             </p>
           </div>
 
@@ -297,10 +293,10 @@ export function CommerceView() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-ink">{r.patient}</p>
-                    <p className="text-xs text-gray-400">{r.date} · {r.wallet}</p>
+                    <p className="text-xs text-gray-400">{r.date}</p>
                   </div>
                   <span className="text-sm font-bold text-primary flex-shrink-0">
-                    -{r.points} WP
+                    +{r.points} WP
                   </span>
                 </li>
               ))}
@@ -316,7 +312,7 @@ export function CommerceView() {
           <div className="text-center">
             <h3 className="font-bold text-ink text-lg">¿Tenés un comercio?</h3>
             <p className="text-sm text-gray-500 mt-1">
-              Registrate en WaitReward para recibir canjes y atraer nuevos clientes
+              Unite a WaitReward para recibir pagos con puntos y atraer nuevos clientes
             </p>
           </div>
           {address ? (
@@ -324,7 +320,7 @@ export function CommerceView() {
               onClick={() => setShowRegister(true)}
               className="w-full py-4 rounded-full bg-primary text-white font-bold text-base active:scale-95 transition-transform"
             >
-              Registrar mi comercio
+              Unirme a WaitReward
             </button>
           ) : (
             <button
@@ -332,7 +328,7 @@ export function CommerceView() {
               disabled={isConnecting}
               className="w-full py-4 rounded-full bg-primary text-white font-bold text-base disabled:opacity-60 active:scale-95 transition-transform"
             >
-              {isConnecting ? "Conectando…" : "Conectar MetaMask"}
+              {isConnecting ? "Validando…" : "Validar identidad (Login)"}
             </button>
           )}
         </div>
@@ -341,13 +337,14 @@ export function CommerceView() {
       {/* Modal: Depositar fondos */}
       {showDeposit && (
         <Modal onClose={() => setShowDeposit(false)}>
-          <h2 className="font-bold text-ink text-lg">Depositar fondos</h2>
+          <h2 className="font-bold text-ink text-lg">Recargar saldo</h2>
           <p className="text-sm text-gray-500">
-            Los fondos depositados se usan para pagar los canjes de los pacientes.
+            Los fondos depositados se usan para respaldar los descuentos de los pacientes.
+            (En esta demo, el pago se hace en tokens de prueba de Avalanche).
           </p>
           <div>
             <label className="text-xs text-gray-500 font-medium mb-1 block">
-              Monto en AVAX
+              Monto a recargar (Demo token)
             </label>
             <input
               type="number"
@@ -367,10 +364,10 @@ export function CommerceView() {
             {depositing ? (
               <>
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Depositando…
+                Procesando recarga…
               </>
             ) : (
-              "Confirmar depósito"
+              "Confirmar recarga"
             )}
           </button>
         </Modal>
@@ -379,13 +376,13 @@ export function CommerceView() {
       {/* Modal: Registrar comercio */}
       {showRegister && (
         <Modal onClose={() => setShowRegister(false)}>
-          <h2 className="font-bold text-ink text-lg">Registrar comercio</h2>
+          <h2 className="font-bold text-ink text-lg">Unirse a WaitReward</h2>
           <p className="text-sm text-gray-500">
-            Pagás 0.01 AVAX/mes de suscripción. Tu comercio aparecerá en la red WaitReward.
+            Tu comercio aparecerá en toda la red y podrás aceptar WaitPoints.
           </p>
           <div>
             <label className="text-xs text-gray-500 font-medium mb-1 block">
-              Nombre del comercio
+              Nombre de tu comercio
             </label>
             <input
               type="text"
@@ -395,11 +392,11 @@ export function CommerceView() {
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-ink focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
-          <div className="bg-surface rounded-xl p-3 flex items-center gap-3">
+          <div className="bg-surface rounded-xl p-3 flex items-start gap-3 mt-2">
             <span className="text-lg">💡</span>
             <p className="text-xs text-gray-500">
-              Costo: <strong className="text-ink">0.01 AVAX</strong> por mes de suscripción.
-              Después podrás depositar fondos para financiar canjes.
+              La suscripción requiere un pago mensual de integración (0.01 tokens en la demo).
+              Este monto valida tu comercio en el contrato inteligente.
             </p>
           </div>
           <button
@@ -410,10 +407,10 @@ export function CommerceView() {
             {registering ? (
               <>
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Registrando…
+                Completando…
               </>
             ) : (
-              "Registrar y pagar 0.01 AVAX"
+              "Completar registro"
             )}
           </button>
         </Modal>
