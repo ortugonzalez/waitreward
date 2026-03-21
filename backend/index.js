@@ -10,6 +10,7 @@ const settleRouter   = require("./routes/settle");
 const pointsRouter   = require("./routes/points");
 const redeemRouter   = require("./routes/redeem");
 const commerceRouter = require("./routes/commerce");
+const aiRouter       = require("./routes/ai");
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -43,6 +44,7 @@ app.use("/api/settle",   settleRouter);
 app.use("/api/points",   pointsRouter);
 app.use("/api/redeem",   redeemRouter);
 app.use("/api/commerce", commerceRouter);
+app.use("/api/ai",       aiRouter);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => {
@@ -87,6 +89,8 @@ app.listen(PORT, () => {
   console.log(`  Points:   GET  /api/points/:wallet`);
   console.log(`  Redeem:   POST /api/redeem`);
   console.log(`  Commerce: GET  /api/commerce/:address`);
+  console.log(`  AI:       GET  /api/ai/predict/:clinicId/:specialist`);
+  console.log(`  AI:       GET  /api/ai/metrics/:clinicId`);
   console.log(`\n  Contrato: ${process.env.CONTRACT_ADDRESS || "(no configurado)"}`);
   console.log(`  Red:      Avalanche Fuji\n`);
 });
