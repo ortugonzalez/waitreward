@@ -165,7 +165,7 @@ export function ClinicView() {
               Demora: <strong>{result.delayMinutes} minutos</strong>
             </span>
             <span className="text-5xl font-black text-primary">
-              {result.pointsAwarded}
+              {parseFloat(result.pointsAwarded)}
             </span>
             <span className="text-sm font-semibold text-gray-500">WaitPoints emitidos</span>
           </div>
