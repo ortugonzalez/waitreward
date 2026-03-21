@@ -12,6 +12,8 @@ const redeemRouter = require("./routes/redeem");
 const commerceRouter = require("./routes/commerce");
 const aiRouter = require("./routes/ai");
 const patientsRouter = require("./routes/patients");
+const authRouter = require("./routes/auth");
+const rewardsRouter = require("./routes/rewards");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -47,6 +49,8 @@ app.use("/api/redeem", redeemRouter);
 app.use("/api/commerce", commerceRouter);
 app.use("/api/ai", aiRouter);
 app.use("/api/patients", patientsRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/rewards", rewardsRouter);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => {

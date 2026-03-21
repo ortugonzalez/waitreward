@@ -2,6 +2,7 @@ const { Router } = require("express");
 const { ethers } = require("ethers");
 const { contractClinic, contractRead } = require("../lib/contract");
 const { PATIENTS } = require("../lib/patients");
+const { supabase } = require("../lib/supabase");
 
 const router = Router();
 
@@ -83,16 +84,40 @@ router.post("/", async (req, res, next) => {
       } catch (_) { }
     }
 
-    return res.json({
+    const response = {
       success: true,
       txHash: receipt.hash,
       appointmentId,
       appointmentId32: apptId32,
       patientWallet,
       delayMinutes: Number(delayMinutes),
-      pointsAwarded: ethers.formatEther(pointsAwarded),   // en WRT enteros
+      pointsAwarded: ethers.formatEther(pointsAwarded),
       pointsAwardedRaw: pointsAwarded.toString(),
-    });
+    };
+
+    // ── Persistir en Supabase (best-effort, no bloquea la respuesta) ──────────
+    if (supabase) {
+      const { data: patient } = await supabase
+        .from("users")
+        .select("id")
+        .eq("wallet_address", patientWallet)
+        .single()
+        .catch(() => ({ data: null }));
+
+      supabase.from("appointments").insert({
+        appointment_id: appointmentId,
+        patient_id: patient?.id ?? null,
+        scheduled_time: new Date(Number(scheduled) * 1000).toISOString(),
+        actual_time: new Date(Number(actual) * 1000).toISOString(),
+        delay_minutes: Number(delayMinutes),
+        points_awarded: Number(ethers.formatEther(pointsAwarded)),
+        tx_hash: receipt.hash,
+      }).then(({ error }) => {
+        if (error) console.error("[settle] Supabase insert error:", error.message);
+      });
+    }
+
+    return res.json(response);
   } catch (err) {
     next(err);
   }
