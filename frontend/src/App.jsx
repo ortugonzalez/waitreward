@@ -6,6 +6,7 @@ import { PatientView } from "./views/PatientView";
 import { ClinicView } from "./views/ClinicView";
 import { CommerceView } from "./views/CommerceView";
 import { LoginView } from "./views/LoginView";
+import { ValidateView } from "./views/ValidateView";
 
 function loadSession() {
   try { return JSON.parse(localStorage.getItem("wr_session")) || null; }
@@ -15,12 +16,16 @@ function loadSession() {
 const ROLE_TAB = { patient: "patient", clinic: "clinic", commerce: "commerce" };
 
 export default function App() {
+  // ── QR validation route (check URL before anything else) ──────────────────
+  const urlParams  = new URLSearchParams(window.location.search);
+  const isValidate = window.location.pathname === "/validate";
+  const validateCode = isValidate ? urlParams.get("code") : null;
+
   const [session, setSession] = useState(loadSession);
   const [activeTab, setActiveTab] = useState(() => {
     const s = loadSession();
     return s ? ROLE_TAB[s.role] ?? "home" : "home";
   });
-  // null = no login pending; "patient"|"clinic"|"commerce" = showing login for that tab
   const [loginFor, setLoginFor] = useState(null);
 
   const handleLogin = (sessionData) => {
@@ -35,10 +40,9 @@ export default function App() {
     setActiveTab("home");
   };
 
-  // When navigating to a role tab: if no session → show login
   const handleTabChange = (tab) => {
-    const roleTab = ["patient", "clinic", "commerce"].includes(tab);
-    if (roleTab && !session) {
+    const isRoleTab = ["patient", "clinic", "commerce"].includes(tab);
+    if (isRoleTab && !session) {
       setLoginFor(tab);
       return;
     }
@@ -46,13 +50,36 @@ export default function App() {
     setActiveTab(tab);
   };
 
-  const isHome = activeTab === "home" && !loginFor;
+  const toaster = (
+    <Toaster
+      position="top-center"
+      toastOptions={{
+        style: { maxWidth: "360px", fontSize: "14px", borderRadius: "12px" },
+        success: { iconTheme: { primary: "#7F77DD", secondary: "#fff" } },
+      }}
+    />
+  );
 
-  // Show login screen
+  // ── /validate?code=... ─────────────────────────────────────────────────────
+  if (validateCode) {
+    return (
+      <div className="bg-surface min-h-screen">
+        {toaster}
+        <div className="max-w-app mx-auto">
+          <ValidateView
+            code={validateCode}
+            onBack={() => { window.location.href = "/"; }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Login screen ───────────────────────────────────────────────────────────
   if (loginFor) {
     return (
       <div className="bg-surface min-h-screen">
-        <Toaster position="top-center" toastOptions={{ style: { maxWidth: "360px", fontSize: "14px", borderRadius: "12px" }, success: { iconTheme: { primary: "#7F77DD", secondary: "#fff" } } }} />
+        {toaster}
         <div className="max-w-app mx-auto relative min-h-screen">
           <LoginView
             onLogin={handleLogin}
@@ -63,24 +90,20 @@ export default function App() {
     );
   }
 
+  const isHome = activeTab === "home";
+
   const VIEWS = {
     home:     <HomeView setActiveTab={handleTabChange} />,
-    patient:  <PatientView session={session} onLogout={handleLogout} />,
-    clinic:   <ClinicView session={session} onLogout={handleLogout} />,
+    patient:  <PatientView  session={session} onLogout={handleLogout} />,
+    clinic:   <ClinicView   session={session} onLogout={handleLogout} />,
     commerce: <CommerceView session={session} onLogout={handleLogout} />,
   };
 
   return (
     <div className="bg-surface min-h-screen">
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          style: { maxWidth: "360px", fontSize: "14px", borderRadius: "12px" },
-          success: { iconTheme: { primary: "#7F77DD", secondary: "#fff" } },
-        }}
-      />
+      {toaster}
       <div className="max-w-app mx-auto relative min-h-screen flex flex-col">
-        {!isHome && <Header activeTab={activeTab} session={session} onLogout={handleLogout} />}
+        {!isHome && <Header activeTab={activeTab} />}
         <main className={`flex-1 ${!isHome ? "pt-20 pb-24" : ""} overflow-y-auto`}>
           {VIEWS[activeTab]}
         </main>

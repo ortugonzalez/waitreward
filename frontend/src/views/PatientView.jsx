@@ -10,10 +10,10 @@ export function PatientView({ session, onLogout }) {
   const [points, setPoints]         = useState(null);
   const [loadingPts, setLoadingPts] = useState(true);
   const [catalog, setCatalog]       = useState([]);
-  const [qrModal, setQrModal]       = useState(null);   // { qrCode, expiresAt, discountValue, points, name }
-  const [generatingFor, setGeneratingFor] = useState(null); // item id being generated
+  const [qrModal, setQrModal]       = useState(null);
+  const [generatingFor, setGeneratingFor] = useState(null);
 
-  // ── Fetch on-chain points balance ──────────────────────────────────────────
+  // ── Fetch on-chain points ──────────────────────────────────────────────────
   const fetchPoints = useCallback(async () => {
     if (!session?.wallet) { setLoadingPts(false); return; }
     setLoadingPts(true);
@@ -21,20 +21,16 @@ export function PatientView({ session, onLogout }) {
       const checksummed = ethers.getAddress(session.wallet);
       const data = await getPoints(checksummed);
       setPoints(data.points ?? 0);
-    } catch {
-      setPoints(0);
-    } finally {
-      setLoadingPts(false);
-    }
+    } catch { setPoints(0); }
+    finally { setLoadingPts(false); }
   }, [session?.wallet]);
 
-  // ── Fetch rewards catalog ──────────────────────────────────────────────────
   const fetchCatalog = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/api/rewards/catalog`);
       const data = await res.json();
       if (data.success) setCatalog(data.catalog);
-    } catch { /* catalog falla silencioso */ }
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -54,19 +50,20 @@ export function PatientView({ session, onLogout }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           patientWallet: session.wallet,
-          commerceName: "Farmacia Del Pueblo",
-          points: item.points,
+          commerceName:  "Farmacia Del Pueblo",
+          points:        item.points,
         }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || "Error generando QR");
       setQrModal({
-        qrCode:        data.qrCode,
-        expiresAt:     data.expiresAt,
-        discountValue: data.discountValue,
-        points:        item.points,
-        name:          item.name,
-        emoji:         item.emoji,
+        qrCode:       data.qrCode,
+        validateUrl:  data.validateUrl,
+        expiresAt:    data.expiresAt,
+        discountValue:data.discountValue,
+        points:       item.points,
+        name:         item.name,
+        emoji:        item.emoji,
       });
     } catch (err) {
       toast.error(err.message || "Error generando QR");
@@ -77,7 +74,7 @@ export function PatientView({ session, onLogout }) {
 
   return (
     <div className="flex flex-col gap-4 px-4">
-      {/* Card de saldo */}
+      {/* Saldo */}
       <div className="bg-white rounded-card shadow-sm p-5">
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-bold text-ink">Hola, {session?.name} 👋</p>
@@ -90,15 +87,11 @@ export function PatientView({ session, onLogout }) {
             >
               <span className={`text-base ${loadingPts ? "animate-spin" : ""}`}>↻</span>
             </button>
-            <button
-              onClick={onLogout}
-              className="text-xs text-gray-400 hover:text-red-400 transition-colors"
-            >
+            <button onClick={onLogout} className="text-xs text-gray-400 hover:text-red-400 transition-colors">
               Salir
             </button>
           </div>
         </div>
-
         <div className="flex flex-col items-center py-4">
           {loadingPts && points === null ? (
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -114,12 +107,10 @@ export function PatientView({ session, onLogout }) {
         </div>
       </div>
 
-      {/* Mis beneficios disponibles */}
+      {/* Catálogo de beneficios */}
       <div className="bg-white rounded-card shadow-sm p-5">
         <h3 className="font-bold text-ink text-base mb-1">Mis beneficios disponibles</h3>
-        <p className="text-xs text-gray-400 mb-4">
-          Acumulá WaitPoints por cada espera y canjeá beneficios
-        </p>
+        <p className="text-xs text-gray-400 mb-4">Acumulá WaitPoints por cada espera y canjeá beneficios</p>
 
         {catalog.length === 0 ? (
           <div className="flex justify-center py-6">
@@ -128,8 +119,8 @@ export function PatientView({ session, onLogout }) {
         ) : (
           <div className="flex flex-col gap-3">
             {catalog.map((item) => {
-              const canRedeem   = (points ?? 0) >= item.points;
-              const missing     = item.points - (points ?? 0);
+              const canRedeem    = (points ?? 0) >= item.points;
+              const missing      = item.points - (points ?? 0);
               const isGenerating = generatingFor === item.id;
 
               return (
@@ -161,9 +152,7 @@ export function PatientView({ session, onLogout }) {
                       >
                         {isGenerating ? (
                           <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          "Canjear"
-                        )}
+                        ) : "Canjear"}
                       </button>
                     ) : (
                       <div className="text-center">
@@ -179,27 +168,24 @@ export function PatientView({ session, onLogout }) {
         )}
       </div>
 
-      {/* Footer */}
       <div className="text-center mt-2 flex justify-center items-center gap-1 opacity-50">
         <span className="text-[10px] text-gray-500 font-medium">Powered by</span>
         <span className="text-[10px] text-red-500 font-bold tracking-tight">AVALANCHE</span>
       </div>
 
-      {/* QR Modal */}
-      {qrModal && (
-        <QRRewardModal data={qrModal} onClose={() => setQrModal(null)} />
-      )}
+      {qrModal && <QRRewardModal data={qrModal} onClose={() => setQrModal(null)} />}
     </div>
   );
 }
 
-// ── QR Modal para beneficio ────────────────────────────────────────────────────
+// ── QR Modal ──────────────────────────────────────────────────────────────────
 function QRRewardModal({ data, onClose }) {
   const expiryStr = data.expiresAt
-    ? new Date(data.expiresAt).toLocaleString("es-AR", {
-        day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
-      })
-    : "24 horas";
+    ? new Date(data.expiresAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })
+    : "60 días";
+
+  // El QR apunta a la URL de validación — el comercio la escanea y el canje se procesa automáticamente
+  const qrContent = data.validateUrl || data.qrCode;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onClose}>
@@ -209,25 +195,17 @@ function QRRewardModal({ data, onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="w-10 h-1 bg-gray-300 rounded-full" />
-
         <div className="flex items-center gap-2">
           <span className="text-2xl">{data.emoji}</span>
           <h2 className="text-lg font-bold text-ink">{data.name}</h2>
         </div>
-
         <p className="text-sm text-gray-500 text-center">
-          Mostrá este código en el comercio para canjear tu beneficio
+          Mostrá este QR en el comercio — se procesa automáticamente al escanearlo
         </p>
 
-        {/* QR */}
+        {/* QR apunta a validateUrl */}
         <div className="p-4 bg-white rounded-2xl shadow-md border border-gray-100">
-          <QRCodeSVG
-            value={data.qrCode}
-            size={200}
-            bgColor="#ffffff"
-            fgColor="#1a1a1a"
-            level="M"
-          />
+          <QRCodeSVG value={qrContent} size={200} bgColor="#ffffff" fgColor="#1a1a1a" level="M" />
         </div>
 
         {/* Código legible */}
@@ -246,8 +224,8 @@ function QRRewardModal({ data, onClose }) {
             <p className="text-xs text-gray-400">descuento</p>
           </div>
           <div className="text-center">
-            <p className="text-xs font-bold text-orange-500">Válido hasta</p>
-            <p className="text-xs text-gray-400">{expiryStr}</p>
+            <p className="text-xs font-bold text-green-600">Válido 60 días</p>
+            <p className="text-xs text-gray-400">hasta {expiryStr}</p>
           </div>
         </div>
 

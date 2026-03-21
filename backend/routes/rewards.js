@@ -2,6 +2,8 @@ const express = require('express')
 const router = express.Router()
 const { supabase } = require('../lib/supabase')
 
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5175'
+
 const CATALOG = [
   { id: 1, name: 'Café en local adherido', points: 30,  emoji: '☕', description: 'En cualquier cafetería de la red',  category: 'gastronomia' },
   { id: 2, name: 'Descuento en farmacia',  points: 100, emoji: '💊', description: 'Productos seleccionados',           category: 'farmacia' },
@@ -60,28 +62,32 @@ router.post('/generate-qr', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Datos incompletos' })
     }
 
-    const qrCode = `WR-${Date.now()}-${patientWallet.slice(2,8)}-${points}`
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
+    const qrCode      = `WR-${Date.now()}-${patientWallet.slice(2,8)}-${points}`
+    const validateUrl = `${FRONTEND_URL}/validate?code=${qrCode}`
+    const expiresAt   = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)   // 60 días
     const discountValue = (points / 100).toFixed(2)
 
     await supabase.from('wr_redemptions').insert({
       patient_wallet: patientWallet,
-      commerce_name: commerceName,
+      commerce_name:  commerceName,
       points_redeemed: points,
       discount_value: parseFloat(discountValue),
-      qr_code: qrCode,
-      status: 'pending',
-      expires_at: expiresAt.toISOString()
+      qr_code:        qrCode,
+      validate_url:   validateUrl,
+      status:         'pending',
+      expires_at:     expiresAt.toISOString()
     })
 
     res.json({
-      success: true,
+      success:      true,
       qrCode,
+      validateUrl,
       expiresAt,
       discountValue: `$${discountValue}`,
-      message: 'QR generado. Válido por 24 horas.'
+      message:      'QR generado. Válido por 60 días.'
     })
   } catch (err) {
+    console.error('[generate-qr]', err.message)
     res.status(500).json({ success: false, message: 'Error generando QR' })
   }
 })
@@ -109,10 +115,10 @@ router.post('/redeem-qr', async (req, res) => {
     await supabase.from('wr_redemptions').update({ status: 'completed' }).eq('qr_code', qrCode)
 
     res.json({
-      success: true,
+      success:        true,
       pointsRedeemed: data.points_redeemed,
-      discountValue: `$${data.discount_value}`,
-      message: `Canje exitoso. Descuento: $${data.discount_value}`
+      discountValue:  `$${data.discount_value}`,
+      message:        `Canje exitoso. Descuento: $${data.discount_value}`
     })
   } catch (err) {
     res.status(500).json({ success: false, message: 'Error procesando QR' })

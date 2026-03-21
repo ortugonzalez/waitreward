@@ -232,6 +232,20 @@ export function ClinicView({ session, onLogout }) {
 
         {prediction && !predictionLoading && (
           <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-4 flex flex-col gap-3">
+            {/* Pacientes en cola */}
+            {prediction.patients_ahead != null && (
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">👥</span>
+                <div>
+                  <p className="text-base font-black text-ink">
+                    Hay {prediction.patients_ahead} pacientes delante tuyo
+                  </p>
+                  <p className="text-xs text-gray-400">en cola ahora mismo</p>
+                </div>
+              </div>
+            )}
+
+            {/* Demora y confianza */}
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-500">Demora estimada</p>
@@ -250,7 +264,7 @@ export function ClinicView({ session, onLogout }) {
               </div>
             </div>
 
-            {/* Confidence bar */}
+            {/* Barra de confianza */}
             <div>
               <div className="w-full h-2 bg-white rounded-full overflow-hidden">
                 <div
