@@ -32,10 +32,14 @@ function toLocalDateTimeValue(date = new Date()) {
 export function ClinicView() {
   const [form, setForm] = useState({
     appointmentId: "",
-    patientWallet: "",
+    patientDNI: "",
     scheduledDatetime: toLocalDateTimeValue(),
     actualDatetime: toLocalDateTimeValue(),
   });
+
+  const [patientName, setPatientName] = useState(null);
+  const [resolvingDNI, setResolvingDNI] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState(loadHistory);
@@ -48,6 +52,32 @@ export function ClinicView() {
 
   const handleChange = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+
+  // Helper to resolve DNI when user leaves the input
+  const handleDNIBlur = async () => {
+    const dni = form.patientDNI.trim();
+    if (!dni) {
+      setPatientName(null);
+      return;
+    }
+
+    setResolvingDNI(true);
+    setPatientName(null);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/patients/${dni}`);
+      const data = await res.json();
+      if (data.success) {
+        setPatientName(data.name);
+      } else {
+        setPatientName(null);
+      }
+    } catch (err) {
+      console.error(err);
+      setPatientName(null);
+    } finally {
+      setResolvingDNI(false);
+    }
+  };
 
   // ── Fetch AI prediction when specialist changes ─────────────────────────────
   useEffect(() => {
@@ -72,8 +102,8 @@ export function ClinicView() {
       .catch((err) => {
         if (!cancelled) {
           console.error("[WaitReward] AI prediction error:", err);
-          if (err.message?.includes("503") || err.message?.includes("no disponible")) {
-            setPredictionError("Módulo de IA no disponible. Iniciá el servidor Flask (ai-module).");
+          if (err.message?.includes("503") || err.message?.includes("no disponible") || err.message?.includes("Failed to fetch")) {
+            setPredictionError("Módulo de IA no disponible en este momento.");
           } else {
             setPredictionError(err.message || "Error al obtener predicción");
           }
@@ -87,10 +117,10 @@ export function ClinicView() {
   // ── Submit appointment ──────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { appointmentId, patientWallet, scheduledDatetime, actualDatetime } = form;
+    const { appointmentId, patientDNI, scheduledDatetime, actualDatetime } = form;
 
-    if (!appointmentId.trim()) return toast.error("Ingresá el ID del turno");
-    if (!patientWallet.trim()) return toast.error("Ingresá la wallet del paciente");
+    if (!appointmentId.trim()) return toast.error("Ingresá el número del turno");
+    if (!patientDNI.trim()) return toast.error("Ingresá el DNI del paciente");
     if (!scheduledDatetime) return toast.error("Ingresá la hora programada");
     if (!actualDatetime) return toast.error("Ingresá la hora real de atención");
 
@@ -105,12 +135,17 @@ export function ClinicView() {
     setResult(null);
 
     try {
+      // The backend /api/settle accepts "dni" and optionally patientWallet.
+      // We pass dni. If the backend fails to connect to the smart contract it will throw an error.
       const data = await settle({
         appointmentId,
-        patientWallet,
+        dni: patientDNI,
         scheduledTimestamp: scheduled,
         actualTimestamp: actual,
       });
+
+      // Include the resolved patient name in the result for UI feedback
+      data.patientName = patientName || `Paciente (${patientDNI})`;
 
       setResult(data);
       toast.success("Turno registrado exitosamente");
@@ -126,9 +161,14 @@ export function ClinicView() {
       setHistory(updated);
       saveHistory(updated);
 
-      setForm((f) => ({ ...f, appointmentId: "", patientWallet: "" }));
+      setForm((f) => ({ ...f, appointmentId: "", patientDNI: "" }));
+      setPatientName(null);
     } catch (err) {
-      toast.error(err.message || "Error al registrar el turno");
+      let msg = err.message || "Error al registrar el turno";
+      if (msg.includes("Failed to fetch")) {
+        msg = "⚠️ No se puede conectar al servidor. Verificá que el backend esté corriendo.";
+      }
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -152,8 +192,8 @@ export function ClinicView() {
               key={s.id}
               onClick={() => setSelectedSpecialist(prev => prev === s.id ? "" : s.id)}
               className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-xs font-medium transition-all active:scale-95 ${selectedSpecialist === s.id
-                  ? "bg-primary text-white shadow-md"
-                  : "bg-surface text-gray-600 hover:bg-gray-100"
+                ? "bg-primary text-white shadow-md"
+                : "bg-surface text-gray-600 hover:bg-gray-100"
                 }`}
             >
               <span className="text-lg">{s.icon}</span>
@@ -221,28 +261,42 @@ export function ClinicView() {
       <form onSubmit={handleSubmit} className="bg-white rounded-card shadow-sm p-5 flex flex-col gap-4">
         <h2 className="font-bold text-ink text-base">Registrar atención</h2>
 
-        <Field label="ID del turno" htmlFor="appointmentId">
+        <Field label="Número de turno" htmlFor="appointmentId">
           <input
             id="appointmentId"
             name="appointmentId"
             type="text"
-            placeholder="Ej: TURNO-2024-001"
+            placeholder="Ej: 001, 002, A-15..."
             value={form.appointmentId}
             onChange={handleChange}
             className={inputCls}
           />
+          <p className="text-[10px] text-gray-400 mt-1">
+            Este número identifica el turno del día. Lo generás vos en tu sistema actual.
+          </p>
         </Field>
 
-        <Field label="Wallet del paciente" htmlFor="patientWallet">
-          <input
-            id="patientWallet"
-            name="patientWallet"
-            type="text"
-            placeholder="0x..."
-            value={form.patientWallet}
-            onChange={handleChange}
-            className={inputCls}
-          />
+        <Field label="DNI o código de paciente" htmlFor="patientDNI">
+          <div className="relative">
+            <input
+              id="patientDNI"
+              name="patientDNI"
+              type="text"
+              placeholder="Ej: 12345678"
+              value={form.patientDNI}
+              onChange={handleChange}
+              onBlur={handleDNIBlur}
+              className={inputCls}
+            />
+            {resolvingDNI && (
+              <div className="absolute right-3 top-3 w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            )}
+          </div>
+          {patientName && (
+            <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
+              <span>✅</span> {patientName}
+            </p>
+          )}
         </Field>
 
         <Field label="Hora programada del turno" htmlFor="scheduledDatetime">
@@ -270,7 +324,7 @@ export function ClinicView() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-4 rounded-full bg-primary text-white font-bold text-base disabled:opacity-60 flex items-center justify-center gap-2 active:scale-95 transition-transform"
+          className="w-full py-4 rounded-full bg-primary text-white font-bold text-base disabled:opacity-60 flex items-center justify-center gap-2 active:scale-95 transition-transform mt-2"
         >
           {loading ? (
             <>
@@ -285,28 +339,12 @@ export function ClinicView() {
 
       {/* Resultado */}
       {result && (
-        <div className="bg-white rounded-card shadow-sm p-5 flex flex-col items-center gap-3">
-          <span className="text-4xl">✅</span>
-          <h3 className="font-bold text-ink text-lg">Turno registrado</h3>
-
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-sm text-gray-500">
-              Demora: <strong>{result.delayMinutes} minutos</strong>
-            </span>
-            <span className="text-5xl font-black text-primary">
-              {parseFloat(result.pointsAwarded)}
-            </span>
-            <span className="text-sm font-semibold text-gray-500">WaitPoints emitidos</span>
-          </div>
-
-          <a
-            href={`https://testnet.snowtrace.io/tx/${result.txHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-primary underline font-mono"
-          >
-            {result.txHash.slice(0, 10)}…{result.txHash.slice(-8)} ↗
-          </a>
+        <div className="bg-green-50 border border-green-200 rounded-card p-5 flex flex-col items-center gap-2 text-center">
+          <span className="text-4xl mb-1">✅</span>
+          <h3 className="font-bold text-green-800 text-lg">Turno registrado</h3>
+          <p className="text-sm text-green-700">
+            El paciente <strong>{result.patientName}</strong> recibió <strong>{parseFloat(result.pointsAwarded)} WaitPoints</strong>.
+          </p>
         </div>
       )}
 
@@ -318,7 +356,7 @@ export function ClinicView() {
             {history.map((h, i) => (
               <li key={i} className="flex items-center justify-between">
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-ink">{h.id}</span>
+                  <span className="text-sm font-medium text-ink">Turno: {h.id}</span>
                   <span className="text-xs text-gray-400">{h.time}</span>
                 </div>
                 <PointsBadge points={h.points} delayMinutes={h.delayMinutes} />
