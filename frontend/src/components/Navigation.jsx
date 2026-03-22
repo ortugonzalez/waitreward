@@ -30,7 +30,7 @@ export function Header({ activeTab }) {
   return (
     <header className="fixed top-0 left-0 right-0 z-20 bg-white border-b border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
       <div className="max-w-app mx-auto flex items-center justify-between px-4 h-14">
-        <span className="text-lg font-black text-[#7F77DD] tracking-tight flex items-center gap-1.5"><span className="text-[15px]">⏱</span> WaitReward</span>
+        <span className="text-lg font-black text-[#7F77DD] tracking-tight flex items-center gap-1.5"><span className="text-[15px]">⏱</span> HORMI</span>
         <span className="text-[13px] font-bold text-gray-400 tracking-wide uppercase">{VIEW_LABELS[activeTab] || ""}</span>
       </div>
     </header>

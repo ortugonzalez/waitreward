@@ -362,7 +362,7 @@ export function ClinicView({ session, onLogout }) {
           <span className="text-4xl mb-1">🎉</span>
           <h3 className="font-black text-[#22C55E] text-lg">Turno registrado</h3>
           <p className="text-[13px] font-medium text-[#1A1A2E]">
-            {result.patientName} sumó <span className="font-black text-[#7F77DD]">{parseFloat(result.pointsAwarded)} WaitPoints</span>.
+            {result.patientName} sumó <span className="font-black text-[#7F77DD]">{parseFloat(result.pointsAwarded)} Puntos HORMI</span>.
           </p>
         </div>
       )}
@@ -506,7 +506,7 @@ function AnalyticsPanel() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Total supply</span>
-                <span className="font-bold text-[#7F77DD]">{contractInfo.contract?.totalSupplyFormatted} WRT</span>
+                <span className="font-bold text-[#7F77DD]">{contractInfo.contract?.totalSupplyFormatted} HRM</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Red</span>

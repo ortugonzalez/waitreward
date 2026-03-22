@@ -1,7 +1,7 @@
 {
-  "name": "WaitReward",
-  "short_name": "WaitReward",
-  "description": "Tu tiempo vale. Acumulá WaitPoints por cada espera médica.",
+  "name": "HORMI",
+  "short_name": "HORMI",
+  "description": "Tu tiempo vale. Acumulá Puntos HORMI por cada espera médica.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F5F5F7",
@@ -25,7 +25,7 @@
     {
       "name": "Ver mis puntos",
       "short_name": "Mis puntos",
-      "description": "Ver saldo de WaitPoints",
+      "description": "Ver saldo de Puntos HORMI",
       "url": "/?tab=patient",
       "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
     },

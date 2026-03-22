@@ -97,7 +97,7 @@ export function PatientView({ session, onLogout }) {
                 {currentPts}
               </span>
             </div>
-            <span className="text-base font-extrabold text-gray-400 mt-1 uppercase tracking-widest">WaitPoints</span>
+            <span className="text-base font-extrabold text-gray-400 mt-1 uppercase tracking-widest">Puntos HORMI</span>
             <span className="inline-block bg-[#22C55E]/10 text-[#22C55E] font-black text-sm px-4 py-1.5 rounded-[8px] mt-3">
               = ${(currentPts / 100).toFixed(2)} en descuentos
             </span>

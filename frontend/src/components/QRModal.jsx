@@ -47,7 +47,7 @@ export function QRModal({ data, onClose }) {
         {/* Puntos destacados */}
         <div className="flex flex-col items-center gap-1">
           <span className="text-5xl font-black text-primary">{data.points}</span>
-          <span className="text-base font-semibold text-gray-500">WaitPoints a canjear</span>
+          <span className="text-base font-semibold text-gray-500">Puntos HORMI a canjear</span>
           <span className="text-sm text-gray-400">= ${(data.points / 100).toFixed(2)} de descuento</span>
         </div>
 

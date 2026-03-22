@@ -164,7 +164,7 @@ export function HomeView({ setActiveTab }) {
           <div className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.08)] p-4 flex items-center gap-3">
             <span className="text-3xl">📲</span>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-[#1A1A2E]">Instalá WaitReward</p>
+              <p className="text-sm font-bold text-[#1A1A2E]">Instalá HORMI</p>
               <p className="text-[11px] text-gray-500">Accedé desde tu pantalla de inicio</p>
             </div>
             <button
@@ -190,9 +190,9 @@ export function HomeView({ setActiveTab }) {
           </div>
         )}
 
-        {/* Tus WaitPoints disponibles */}
+        {/* Tus Puntos HORMI disponibles */}
         <div className="bg-[#7F77DD] text-white rounded-[20px] shadow-[0_4px_16px_rgba(127,119,221,0.3)] p-6 flex flex-col items-center">
-          <h2 className="text-sm font-bold uppercase tracking-widest opacity-90 mb-1">Tus WaitPoints disponibles</h2>
+          <h2 className="text-sm font-bold uppercase tracking-widest opacity-90 mb-1">Tus Puntos HORMI disponibles</h2>
           <div className="flex items-baseline gap-2">
             <span className="text-6xl font-black">{currentPts}</span>
             <span className="text-lg font-bold opacity-80">WP</span>
@@ -324,8 +324,8 @@ function QRRewardModal({ data, onClose }) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Mi WaitReward Beneficio",
-          text: `Tengo un descuento de ${data.discountValue} con WaitReward! Entregale este código al comercio: ${data.qrCode}`,
+          title: "Mi HORMI Beneficio",
+          text: `Tengo un descuento de ${data.discountValue} con HORMI! Entregale este código al comercio: ${data.qrCode}`,
         });
       } catch (err) { }
     } else {

@@ -1,4 +1,4 @@
-# WaitReward 🏥⏱️
+# HORMI 🏥⏱️
 ### Medical wait time transformed into real rewards — powered by Avalanche
 
 > "The wait is inevitable. Now it's rewarded."
@@ -23,11 +23,11 @@ A single mid-size clinic loses ~$375,000 ARS/month in avoidable patient attritio
 
 ## Our Solution
 
-WaitReward is a **loyalty rewards protocol** that transforms medical wait time into real value. Think Starbucks Stars — but for healthcare.
+HORMI is a **loyalty rewards protocol** that transforms medical wait time into real value. Think Starbucks Stars — but for healthcare.
 
 When a clinic runs late:
 1. 🏥 Clinic registers actual attendance time via API
-2. ⛓️ Smart contract calculates delay and **automatically mints WaitPoints (WRT tokens)** to the patient
+2. ⛓️ Smart contract calculates delay and **automatically mints Puntos HORMI (HRM tokens)** to the patient
 3. 🎁 Patient redeems points at partner businesses (pharmacies, cafés, psychology sessions)
 4. 💰 Commerce pays monthly membership — protocol earns 3% fee per redemption
 
@@ -38,7 +38,7 @@ When a clinic runs late:
 ## How It Works
 
 ### Point Tiers
-| Delay | WaitPoints | Value |
+| Delay | Puntos HORMI | Value |
 |-------|-----------|-------|
 | < 15 min | 0 WP | — |
 | 15–29 min | 50 WP | $0.50 |
@@ -70,7 +70,7 @@ When a clinic runs late:
 - **Contract:** `0xAad6125bE3E57473fb575af47c4B96253c1bEEEa`
 - **Snowtrace:** https://testnet.snowtrace.io/address/0xAad6125bE3E57473fb575af47c4B96253c1bEEEa
 - **Tests:** Hardhat — 39/39 passing
-- **Token:** WRT (WaitReward Token) — ERC-20, minted on demand
+- **Token:** HRM (HORMI Token) — ERC-20, minted on demand
 
 ### Backend
 - **Runtime:** Node.js + Express
@@ -98,7 +98,7 @@ When a clinic runs late:
 
 ### For Patients 🧑‍⚕️
 - ✅ Login with DNI (no crypto knowledge required)
-- ✅ Real-time WaitPoints balance
+- ✅ Real-time Puntos HORMI balance
 - ✅ Membership level (Bronze → Premium)
 - ✅ Benefits catalog with one-tap redemption
 - ✅ QR code generation (valid 60 days)
@@ -155,7 +155,7 @@ V2 will use real clinic historical data.
 
 **WaitReward.sol** — ERC-20 token with integrated loyalty logic:
 ```solidity
-// Mint WaitPoints based on delay
+// Mint Puntos HORMI based on delay
 function settleAppointment(
     bytes32 appointmentId,
     address patient,
@@ -228,7 +228,7 @@ npm install && npm run dev
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | /api/auth/login | Login by DNI, returns role |
-| POST | /api/settle | Register appointment, mint WaitPoints |
+| POST | /api/settle | Register appointment, mint Puntos HORMI |
 | GET | /api/points/:wallet | Get patient balance |
 | GET | /api/rewards/catalog | Benefits catalog |
 | POST | /api/rewards/generate-qr | Generate redemption QR |
@@ -266,7 +266,7 @@ npm install && npm run dev
 
 ## Tracks Applied
 
-- **Avalanche Track** — Loyalty rewards protocol on Avalanche L1. WRT token (ERC-20) minted on-demand when clinics register delays. All redemptions on-chain with automatic 3% protocol fee.
+- **Avalanche Track** — Loyalty rewards protocol on Avalanche L1. HRM token (ERC-20) minted on-demand when clinics register delays. All redemptions on-chain with automatic 3% protocol fee.
 - **Fiserv Fintech Track** — Merchant retention platform. Pharmacies and cafés pay monthly membership. Each QR redemption brings verified new customers tracked on-chain.
 
 ---
@@ -289,4 +289,4 @@ npm install && npm run dev
 
 ---
 
-*WaitReward — Tu tiempo vale. Ahora lo demostramos.*
+*HORMI — Tu tiempo vale. Ahora lo demostramos.*

@@ -14,7 +14,7 @@ export function Layout({ session, activeTab, setActiveTab, onLogout, children, i
             >
                 <div className="flex items-center gap-2 mb-10">
                     <span className="text-2xl">⏱</span>
-                    <span className="text-xl font-black tracking-tight">WaitReward</span>
+                    <span className="text-xl font-black tracking-tight">HORMI</span>
                 </div>
 
                 <div className="mb-8 bg-white/10 p-4 rounded-[20px] shadow-sm">

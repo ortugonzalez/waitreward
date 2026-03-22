@@ -55,7 +55,7 @@ export function LoginView({ onLogin }) {
         <div className="absolute bottom-0 -left-10 w-32 h-32 bg-[#9B8FE8]/50 rounded-full blur-2xl" />
         <div className="relative z-10 pt-4">
           <h1 className="text-[32px] leading-tight font-black tracking-tight">
-            Bienvenido a WaitReward
+            Bienvenido a HORMI
           </h1>
           <p className="text-[15px] font-medium opacity-90 mt-2">
             Ingresá tus datos para acceder a tu panel.

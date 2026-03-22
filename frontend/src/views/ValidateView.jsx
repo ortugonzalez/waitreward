@@ -42,7 +42,7 @@ export function ValidateView({ code, onBack }) {
             <div>
               <h2 className="text-xl font-black text-green-700">Canje exitoso</h2>
               <p className="text-sm text-green-600 mt-1">
-                {result.pointsRedeemed} WaitPoints · Descuento: {result.discountValue}
+                {result.pointsRedeemed} Puntos HORMI · Descuento: {result.discountValue}
               </p>
             </div>
             <div className="w-full bg-green-50 border border-green-200 rounded-xl p-4">
@@ -74,7 +74,7 @@ export function ValidateView({ code, onBack }) {
         )}
       </div>
 
-      <p className="text-[10px] text-gray-400 mt-6">WaitReward · Avalanche Fuji Testnet</p>
+      <p className="text-[10px] text-gray-400 mt-6">HORMI · Avalanche Fuji Testnet</p>
     </div>
   );
 }

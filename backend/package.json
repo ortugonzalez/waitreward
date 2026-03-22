@@ -1,7 +1,7 @@
 {
-  "name": "waitreward-backend",
+  "name": "hormi-backend",
   "version": "1.0.0",
-  "description": "WaitReward API",
+  "description": "HORMI API",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
