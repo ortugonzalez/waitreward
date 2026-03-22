@@ -265,9 +265,30 @@
       50% { opacity: 0.4; }
     }
 
+    .btn-demo {
+      background: transparent;
+      color: var(--violet);
+      border: 2px solid var(--violet);
+      border-radius: 14px;
+      padding: 14px 32px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-demo:hover {
+      background: var(--violet);
+      color: white;
+      transform: translateY(-2px);
+    }
+
     @media (max-width: 600px) {
       .hero-buttons { flex-direction: column; align-items: center; }
-      .btn-primary, .btn-secondary { width: 100%; max-width: 300px; text-align: center; }
+      .btn-primary, .btn-secondary, .btn-demo { width: 100%; max-width: 300px; text-align: center; justify-content: center; }
     }
   </style>
 </head>
@@ -295,6 +316,10 @@
   <div class="hero-buttons">
     <a href="https://waitreward.vercel.app" class="btn-primary" target="_blank">
       🐜 Try HORMI now
+    </a>
+    <a href="https://drive.google.com/drive/folders/1W_5sEj4SU1aWaD5_BcW-mDntAOSI87oV?usp=sharing"
+       class="btn-demo" target="_blank">
+      🎬 Watch Demo
     </a>
     <a href="https://github.com/ortugonzalez/waitreward" class="btn-secondary" target="_blank">
       View on GitHub
