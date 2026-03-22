@@ -1,53 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
 import toast from "react-hot-toast";
-import { QRCodeSVG } from "qrcode.react";
 import { getPoints, getPatientHistory } from "../api/client";
-
-async function subscribeToNotifications(wallet) {
-  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-  try {
-    const permResult = await Notification.requestPermission();
-    if (permResult !== "granted") return;
-
-    const keyRes = await fetch(`${API_URL}/api/push/vapid-public-key`);
-    const { key } = await keyRes.json();
-    if (!key) return;
-
-    const reg = await navigator.serviceWorker.ready;
-    const existing = await reg.pushManager.getSubscription();
-    if (existing) {
-      await fetch(`${API_URL}/api/push/subscribe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wallet, subscription: existing.toJSON() }),
-      });
-      return;
-    }
-
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: key,
-    });
-    await fetch(`${API_URL}/api/push/subscribe`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wallet, subscription: sub.toJSON() }),
-    });
-  } catch (err) {
-    console.warn("[push] Subscribe error:", err.message);
-  }
-}
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export function PatientView({ session, onLogout }) {
   const [points, setPoints] = useState(null);
-  const [levelInfo, setLevelInfo] = useState(null);
   const [loadingPts, setLoadingPts] = useState(true);
-  const [catalog, setCatalog] = useState([]);
-  const [qrModal, setQrModal] = useState(null);
-  const [generatingFor, setGeneratingFor] = useState(null);
 
   const [queue, setQueue] = useState(null);
   const [queueLoading, setQueueLoading] = useState(false);
@@ -63,21 +23,9 @@ export function PatientView({ session, onLogout }) {
       const checksummed = ethers.getAddress(session.wallet);
       const data = await getPoints(checksummed);
       setPoints(data.points ?? 0);
-      setLevelInfo(data);
-    } catch { setPoints(0); setLevelInfo(null); }
+    } catch { setPoints(0); }
     finally { setLoadingPts(false); }
   }, [session?.wallet]);
-
-  const fetchCatalog = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/rewards/catalog`);
-      const data = await res.json();
-      if (data.success) {
-        // Add static fallback data if needed to ensure emojis etc are consistent
-        setCatalog(data.catalog);
-      }
-    } catch { }
-  }, []);
 
   const fetchQueue = useCallback(async () => {
     setQueueLoading(true);
@@ -107,53 +55,20 @@ export function PatientView({ session, onLogout }) {
 
   useEffect(() => {
     fetchPoints();
-    fetchCatalog();
     fetchQueue();
     fetchHistory();
     const interval = setInterval(fetchPoints, 15_000);
     const queueInterval = setInterval(fetchQueue, 60_000);
-    if (session?.wallet) subscribeToNotifications(session.wallet);
     return () => {
       clearInterval(interval);
       clearInterval(queueInterval);
     };
-  }, [fetchPoints, fetchCatalog, fetchQueue, fetchHistory]);
-
-  const handleRedeem = async (item) => {
-    if (!session?.wallet) return toast.error("Sesión no válida");
-    setGeneratingFor(item.id);
-    try {
-      const res = await fetch(`${API_URL}/api/rewards/generate-qr`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          patientWallet: session.wallet,
-          commerceName: "Farmacia Del Pueblo",
-          points: item.points,
-        }),
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.message || "Error generando QR");
-      setQrModal({
-        qrCode: data.qrCode,
-        validateUrl: data.validateUrl,
-        expiresAt: data.expiresAt,
-        discountValue: data.discountValue,
-        points: item.points,
-        name: item.name,
-        emoji: item.emoji,
-      });
-    } catch (err) {
-      toast.error(err.message || "Error generando QR");
-    } finally {
-      setGeneratingFor(null);
-    }
-  };
+  }, [fetchPoints, fetchQueue, fetchHistory]);
 
   const currentPts = points ?? 0;
 
   return (
-    <div className="flex flex-col gap-6 px-4 bg-[#F8F7FF] min-h-screen text-[#1A1A2E] font-sans pb-8">
+    <div className="flex flex-col gap-6 px-4 bg-[#F8F7FF] min-h-screen text-[#1A1A2E] font-sans pb-8 max-w-full">
 
       <div className="flex items-center justify-between pt-4">
         <h1 className="text-2xl font-black text-[#1A1A2E]">Hola, {session?.name?.split(' ')[0]} 👋</h1>
@@ -165,9 +80,6 @@ export function PatientView({ session, onLogout }) {
             title="Actualizar"
           >
             <span className={`text-base font-bold ${loadingPts ? "animate-spin" : ""}`}>↻</span>
-          </button>
-          <button onClick={onLogout} className="text-xs font-bold text-gray-400 hover:text-red-400 transition-colors">
-            Salir
           </button>
         </div>
       </div>
@@ -192,48 +104,6 @@ export function PatientView({ session, onLogout }) {
           </>
         )}
       </div>
-
-      {/* Level Card */}
-      {levelInfo && levelInfo.level && (
-        <div
-          className="rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 flex flex-col gap-3 relative overflow-hidden"
-          style={{ backgroundColor: `${levelInfo.level.color}15`, border: `1px solid ${levelInfo.level.color}30` }}
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-4xl">{levelInfo.level.emoji}</span>
-            <div>
-              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Membresía</p>
-              <p className="text-xl font-black text-[#1A1A2E] leading-none mt-1">{levelInfo.level.name}</p>
-            </div>
-          </div>
-
-          {levelInfo.level.perks && levelInfo.level.perks.length > 0 && (
-            <div className="flex flex-col gap-1 mt-2">
-              {levelInfo.level.perks.map((perk, i) => (
-                <div key={i} className="flex items-start gap-2 text-[13px] font-medium text-[#1A1A2E]">
-                  <span className="text-[#22C55E]">✓</span>
-                  <span>{perk}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {levelInfo.nextLevel && (
-            <div className="w-full mt-3 flex flex-col gap-1.5 relative z-10 pt-3 border-t border-black/5">
-              <div className="flex justify-between text-[11px] font-bold text-gray-500 tracking-wide">
-                <span>{levelInfo.nextLevel.progressPercent}% hacia {levelInfo.nextLevel.name} {levelInfo.nextLevel.emoji}</span>
-                <span>Faltan {levelInfo.nextLevel.pointsNeeded} WP</span>
-              </div>
-              <div className="w-full h-2.5 bg-white/50 rounded-full overflow-hidden shadow-inner">
-                <div
-                  className="h-full transition-all duration-1000 ease-out rounded-full"
-                  style={{ width: `${levelInfo.nextLevel.progressPercent}%`, backgroundColor: levelInfo.level.color }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Cola en tiempo real */}
       <div className="bg-[#F8F7FF] border-l-4 border-[#7F77DD] rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 flex flex-col gap-4 relative overflow-hidden bg-white">
@@ -284,76 +154,6 @@ export function PatientView({ session, onLogout }) {
             )}
           </div>
         ) : null}
-      </div>
-
-      {/* Catálogo de beneficios */}
-      <div>
-        <h3 className="font-bold text-[#1A1A2E] text-lg mb-1 px-1">Mis beneficios</h3>
-        <p className="text-[13px] text-gray-500 mb-4 px-1">Canjeá tus WaitPoints en comercios adheridos.</p>
-
-        {catalog.length === 0 ? (
-          <div className="flex justify-center py-8">
-            <div className="w-8 h-8 border-4 border-[#7F77DD] border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {catalog.map((item) => {
-              const staticRef = [{ emoji: "☕" }, { emoji: "💊" }, { emoji: "🧠", badge: "MÁS POPULAR" }, { emoji: "🩺" }];
-              const itemIndex = item.id - 1;
-              const emoji = item.emoji || staticRef[itemIndex]?.emoji || "🎁";
-              const badge = item.badge || staticRef[itemIndex]?.badge;
-
-              const canRedeem = currentPts >= item.points;
-              const missing = item.points - currentPts;
-              const isGenerating = generatingFor === item.id;
-              const percent = Math.min(100, (currentPts / item.points) * 100);
-
-              return (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.08)] p-4 flex flex-col relative transition-all"
-                >
-                  {badge && (
-                    <span className="absolute -top-2 -right-2 bg-[#22C55E] text-white text-[9px] font-bold px-2 py-1 rounded-full shadow-sm z-10 uppercase tracking-widest ring-2 ring-white">
-                      {badge}
-                    </span>
-                  )}
-                  <span className="text-[48px] self-center mb-2">{emoji}</span>
-                  <div className="text-center shrink-0 mb-3">
-                    <p className="text-[13px] font-bold text-[#1A1A2E] leading-tight line-clamp-2 min-h-[30px]">{item.name}</p>
-                    <p className={`text-[12px] font-black mt-1 ${canRedeem ? "text-[#7F77DD]" : "text-gray-400"}`}>
-                      {item.points} WP
-                    </p>
-                  </div>
-
-                  <div className="mt-auto">
-                    {canRedeem ? (
-                      <button
-                        onClick={() => handleRedeem(item)}
-                        disabled={isGenerating}
-                        className="w-full py-2.5 rounded-[12px] bg-[#7F77DD] text-white font-bold text-xs active:scale-[0.98] transition-transform disabled:opacity-60 flex items-center justify-center gap-1 shadow-[0_2px_8px_rgba(127,119,221,0.4)]"
-                      >
-                        {isGenerating ? (
-                          <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : "Canjear"}
-                      </button>
-                    ) : (
-                      <div className="flex flex-col gap-1.5">
-                        <div className="w-full h-[6px] bg-[#F8F7FF] rounded-full overflow-hidden shadow-inner">
-                          <div
-                            className="h-full bg-gray-300 transition-all duration-500 rounded-full"
-                            style={{ width: `${percent}%` }}
-                          />
-                        </div>
-                        <span className="text-[10px] text-gray-500 text-center font-bold">Faltan {missing} WP</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
 
       {/* Mi historial */}
@@ -420,82 +220,39 @@ export function PatientView({ session, onLogout }) {
         )}
       </div>
 
-      {qrModal && (
-        <QRRewardModal data={qrModal} onClose={() => setQrModal(null)} />
-      )}
-    </div>
-  );
-}
-
-// ── QR Modal ──────────────────────────────────────────────────────────────────
-function QRRewardModal({ data, onClose }) {
-  const expiryStr = data.expiresAt
-    ? new Date(data.expiresAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })
-    : "60 días";
-
-  const qrContent = data.validateUrl || data.qrCode;
-
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "Mi WaitReward Beneficio",
-          text: `Tengo un descuento de ${data.discountValue} con WaitReward! Entregale este código al comercio: ${data.qrCode}`,
-        });
-      } catch (err) { }
-    } else {
-      toast.success("Código copiado al portapapeles");
-      navigator.clipboard.writeText(data.qrCode);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center font-sans" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" />
-      <div
-        className="relative w-full max-w-sm bg-white rounded-t-[24px] p-6 pb-10 flex flex-col items-center gap-5 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-1" />
-
-        <div className="w-full flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl bg-[#F8F7FF] p-2 rounded-[16px]">{data.emoji}</span>
-            <div>
-              <h2 className="text-[17px] font-black text-[#1A1A2E] leading-tight">{data.name}</h2>
-              <p className="text-[12px] font-bold text-[#22C55E] flex items-center gap-1">
-                <span>⏱️</span> Válido por 60 días
-              </p>
+      {/* Nuestro Impacto */}
+      <div className="mt-6 pt-6 border-t border-gray-200 animate-fade-in">
+        <h3 className="font-black text-gray-400 text-[11px] uppercase tracking-widest mb-4 px-2 text-center">Nuestro Impacto Global</h3>
+        
+        <div className="grid grid-cols-2 gap-3 text-center opacity-80 pointer-events-none">
+          <div className="bg-white rounded-[16px] p-4 flex flex-col items-center shadow-sm border border-gray-100">
+            <span className="text-2xl mb-1">💸</span>
+            <p className="font-black text-[#7F77DD] text-lg">42.350</p>
+            <p className="text-[10px] text-[#1A1A2E] font-bold uppercase tracking-widest mt-1">WP entregados</p>
+          </div>
+          
+          <div className="bg-white rounded-[16px] p-4 flex flex-col items-center shadow-sm border border-gray-100">
+            <span className="text-2xl mb-1">🏥</span>
+            <p className="font-black text-[#7F77DD] text-lg">847</p>
+            <p className="text-[10px] text-[#1A1A2E] font-bold uppercase tracking-widest mt-1">Turnos</p>
+          </div>
+          
+          <div className="bg-white rounded-[16px] p-4 flex flex-col items-center shadow-sm border border-gray-100 col-span-2">
+            <div className="flex flex-col items-center">
+              <span className="text-3xl mb-1">💊</span>
+              <div className="flex items-baseline gap-1">
+                <p className="font-black text-[#7F77DD] text-2xl">156</p>
+              </div>
+              <p className="text-[11px] text-[#1A1A2E] font-bold uppercase tracking-widest mt-1">Canjes realizados</p>
             </div>
           </div>
         </div>
-
-        {/* QR container */}
-        <div className="p-4 bg-white rounded-[24px] shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-[#F8F7FF] flex justify-center w-full">
-          <QRCodeSVG value={qrContent} size={220} bgColor="#ffffff" fgColor="#1A1A2E" level="M" />
-        </div>
-
-        {/* Textual code */}
-        <div className="bg-[#F8F7FF] rounded-[16px] px-6 py-3 w-full text-center border border-gray-100">
-          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Tu código</p>
-          <p className="font-mono text-xl text-[#1A1A2E] font-black tracking-[0.2em]">{data.qrCode}</p>
-        </div>
-
-        <div className="flex w-full gap-3 mt-2">
-          <button
-            onClick={onClose}
-            className="flex-1 py-4 rounded-[16px] bg-[#F8F7FF] text-[#1A1A2E] font-bold text-[15px] active:scale-[0.98] transition-all"
-          >
-            Cerrar
-          </button>
-          <button
-            onClick={handleShare}
-            className="flex-1 py-4 rounded-[16px] bg-[#7F77DD] text-white font-bold text-[15px] active:scale-[0.98] transition-all shadow-[0_4px_12px_rgba(127,119,221,0.3)]"
-          >
-            Compartir
-          </button>
-        </div>
+        
+        <p className="text-center text-[13px] font-medium text-gray-400 mt-6 mb-2">
+          ❤️ Tu tiempo vale. Ahora lo demostramos.
+        </p>
       </div>
+
     </div>
   );
 }
