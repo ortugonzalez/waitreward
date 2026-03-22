@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
   <rect width="192" height="192" rx="40" fill="#7F77DD"/>
-  <text x="96" y="130" font-size="100" text-anchor="middle"
-    font-family="Apple Color Emoji, Segoe UI Emoji, sans-serif">
+  <text x="96" y="140" font-size="110" text-anchor="middle"
+    font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">
     🐜
   </text>
 </svg>
