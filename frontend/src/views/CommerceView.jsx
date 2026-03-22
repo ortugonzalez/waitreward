@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import toast from "react-hot-toast";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const MOCK_REDEMPTIONS = [
   { points: 150, discount: "$1.50", time: "10:32", date: "Hoy" },
-  { points: 50, discount: "$0.50", time: "09:15", date: "Hoy" },
+  { points: 50,  discount: "$0.50", time: "09:15", date: "Hoy" },
   { points: 300, discount: "$3.00", time: "18:47", date: "Ayer" },
   { points: 150, discount: "$1.50", time: "11:20", date: "Ayer" },
 ];
@@ -18,6 +18,7 @@ export function CommerceView({ session }) {
   const [qrInput, setQrInput] = useState("");
   const [qrResult, setQrResult] = useState(null);
   const [qrLoading, setQrLoading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const fetchCommerceByName = useCallback(async (nameStr) => {
     if (!nameStr) return;
@@ -43,16 +44,14 @@ export function CommerceView({ session }) {
     }
   }, [session, fetchCommerceByName]);
 
-  const handleValidateQR = async (e) => {
-    e.preventDefault();
-    if (!qrInput.trim()) return toast.error("Ingresá el código QR");
+  const submitValidation = async (code) => {
     setQrLoading(true);
     setQrResult(null);
     try {
       const res = await fetch(`${API_URL}/api/rewards/redeem-qr`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ qrCode: qrInput.trim() }),
+        body: JSON.stringify({ qrCode: code }),
       });
       const data = await res.json();
       setQrResult(data);
@@ -67,21 +66,61 @@ export function CommerceView({ session }) {
     }
   };
 
-  // Safe checks for rendering fallback values if api loading/fails
+  const handleValidateQR = async (e) => {
+    e.preventDefault();
+    if (!qrInput.trim()) return toast.error("Ingresá el código QR");
+    submitValidation(qrInput.trim());
+  };
+
+  // Lógica de cámara y jsQR
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!window.jsQR) {
+      toast.error("Librería de lectura QR no cargada. Intentá ingresado el código a mano.");
+      return;
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = window.jsQR(imageData.data, imageData.width, imageData.height);
+      
+      if (code) {
+        toast.success("¡QR detectado!");
+        setQrInput(code.data);
+      } else {
+        toast.error("No se detectó ningún código QR en la imagen");
+      }
+    };
+    img.src = URL.createObjectURL(file);
+    e.target.value = null; // reset
+  };
+
   const displayCommerce = commerce || {
     name: session?.name || "Comercio",
     emoji: "🏪",
     category: "Comercio Adherido",
     active: true,
-    address: "Corrientes 1234, CABA",
+    address: "Av. Corrientes 1234, CABA",
     hours: "Lun a Vie 09:00 - 20:00",
   };
+
+  const address = commerce?.address || "Av. Corrientes 1234, CABA"; 
 
   const todayRedemptions = MOCK_REDEMPTIONS.filter(r => r.date === "Hoy");
 
   return (
     <div className="flex flex-col gap-6 px-4 bg-[#F8F7FF] min-h-screen text-[#1A1A2E] font-sans pb-8 max-w-full">
-
+      
       {/* ── Sección 1: Header del comercio ── */}
       <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.06)] p-6 mt-4 flex flex-col gap-4 border border-gray-100">
         <div className="flex items-start gap-4">
@@ -100,14 +139,14 @@ export function CommerceView({ session }) {
             <p className="text-[13px] font-bold text-[#7F77DD] mt-1">{displayCommerce.category || "General"}</p>
           </div>
         </div>
-
+        
         <div className="flex flex-col gap-2 mt-2 pt-4 border-t border-gray-100">
           <div className="flex items-center gap-2 text-[13px] text-gray-600">
-            <span className="text-lg">📍</span>
-            <span className="font-medium">{displayCommerce.address || "Av. Corrientes 1234, CABA"}</span>
+            <span className="text-lg">📍</span> 
+            <span className="font-medium">{address}</span>
           </div>
           <div className="flex items-center gap-2 text-[13px] text-gray-600">
-            <span className="text-lg">🕗</span>
+            <span className="text-lg">🕗</span> 
             <span className="font-medium">{displayCommerce.hours || "Lunes a Viernes 09:00 a 20:00"}</span>
           </div>
         </div>
@@ -145,7 +184,7 @@ export function CommerceView({ session }) {
             📷
           </div>
           <h2 className="text-lg font-black text-[#1A1A2E]">Validar Beneficio</h2>
-          <p className="text-[13px] text-gray-500">Ingresá el código del QR del paciente para aplicar el descuento.</p>
+          <p className="text-[13px] text-gray-500">Escanéa el código QR o ingresalo a mano.</p>
         </div>
 
         <form onSubmit={handleValidateQR} className="flex flex-col gap-3">
@@ -154,7 +193,7 @@ export function CommerceView({ session }) {
             placeholder="Ej: WR-1234..."
             value={qrInput}
             onChange={(e) => { setQrInput(e.target.value); setQrResult(null); }}
-            className="w-full bg-[#F8F7FF] border border-gray-200 rounded-[16px] px-4 py-4 text-[#1A1A2E] text-center text-lg font-mono font-bold focus:outline-none focus:border-[#7F77DD] focus:ring-4 focus:ring-[#7F77DD]/10 transition-all placeholder:text-gray-400 placeholder:font-normal"
+            className="w-full bg-[#F8F7FF] border border-gray-200 rounded-[16px] px-4 py-4 text-[#1A1A2E] text-center text-lg font-mono font-bold focus:outline-none focus:border-[#7F77DD] focus:ring-4 focus:ring-[#7F77DD]/10 transition-all placeholder:text-gray-400"
           />
           <button
             type="submit"
@@ -165,19 +204,45 @@ export function CommerceView({ session }) {
           </button>
         </form>
 
+        <div className="mt-4 flex flex-col gap-3">
+          <div className="flex items-center gap-3 w-full">
+            <div className="h-px bg-gray-200 flex-1"></div>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">O también</span>
+            <div className="h-px bg-gray-200 flex-1"></div>
+          </div>
+
+          <button 
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full py-3.5 rounded-[12px] bg-white text-[#1A1A2E] border-2 border-gray-200 font-bold text-[14px] active:scale-[0.98] transition-all flex items-center justify-center gap-2 hover:border-[#7F77DD]"
+          >
+            <span className="text-lg">📷</span> Escanear con cámara
+          </button>
+          
+          <input 
+            type="file" 
+            accept="image/*" 
+            capture="environment" 
+            onChange={handleImageUpload} 
+            ref={fileInputRef}
+            className="hidden"
+          />
+        </div>
+
         {qrResult && (
-          <div className={`mt-4 rounded-[16px] p-4 flex items-start gap-3 animate-fade-in ${qrResult.success
+          <div className={`mt-4 rounded-[16px] p-4 flex items-start gap-3 animate-fade-in ${
+            qrResult.success
               ? "bg-[#22C55E]/10 border border-[#22C55E]/20"
               : "bg-red-50 border border-red-100"
-            }`}>
+          }`}>
             <span className="text-2xl mt-1">{qrResult.success ? "✅" : "❌"}</span>
             <div className="flex-1">
               <p className={`text-[15px] font-black ${qrResult.success ? "text-[#22C55E]" : "text-red-600"}`}>
                 {qrResult.success ? "¡Canje aprobado!" : "Canje rechazado"}
               </p>
               <p className={`text-[13px] font-medium mt-1 ${qrResult.success ? "text-green-800" : "text-red-700"}`}>
-                {qrResult.success
-                  ? `Se descontaron ${qrResult.pointsRedeemed} WP. Aplicá un descuento de ${qrResult.discountValue}.`
+                {qrResult.success 
+                  ? `Se descontaron ${qrResult.pointsRedeemed} WP. Aplicá un descuento de ${qrResult.discountValue}.` 
                   : qrResult.message || "El código ingresado no es válido o ya fue utilizado."}
               </p>
             </div>
@@ -190,7 +255,7 @@ export function CommerceView({ session }) {
         <h3 className="font-bold text-[#1A1A2E] text-base mb-4 flex items-center gap-2">
           <span>📋</span> Historial de hoy
         </h3>
-
+        
         {todayRedemptions.length > 0 ? (
           <div className="flex flex-col divide-y divide-gray-100">
             {todayRedemptions.map((r, i) => (

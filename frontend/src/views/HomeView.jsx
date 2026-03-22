@@ -6,55 +6,43 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const TIERS = [
   {
-    name: "Membresía Bronce",
+    name: "BRONCE",
     emoji: "🥉",
-    color: "text-[#B08D57]",
-    bg: "bg-[#B08D57]/10",
-    border: "border-[#B08D57]/20",
     items: [
-      { id: 1, emoji: "☕", name: "Café en adherido", points: 30 },
-      { id: 2, emoji: "💊", name: "Dcto en farmacia", points: 100 },
-      { id: 3, emoji: "🥗", name: "Dcto en dietética", points: 80 },
-      { id: 4, emoji: "💈", name: "Dcto peluquería", points: 60 },
+      { id: 1, emoji: "☕", name: "Café en local adherido", points: 30 },
+      { id: 2, emoji: "💊", name: "Descuento en farmacia", points: 100 },
+      { id: 3, emoji: "🥗", name: "Descuento en dietética", points: 80 },
+      { id: 4, emoji: "💈", name: "Descuento en peluquería", points: 60 },
     ]
   },
   {
-    name: "Membresía Plata",
+    name: "PLATA",
     emoji: "🥈",
-    color: "text-[#C0C0C0]",
-    bg: "bg-[#808080]/10",
-    border: "border-[#808080]/20",
     items: [
-      { id: 5, emoji: "🧠", name: "Sesión psicología", points: 300 },
-      { id: 6, emoji: "🦷", name: "Dcto odontología", points: 250 },
-      { id: 7, emoji: "💆", name: "Sesión kinesiología", points: 250 },
-      { id: 8, emoji: "📋", name: "Análisis laboratorio", points: 200 },
+      { id: 5, emoji: "🧠", name: "Sesión de psicología", points: 300 },
+      { id: 6, emoji: "🦷", name: "Descuento en odontología", points: 250 },
+      { id: 7, emoji: "💆", name: "Sesión de kinesiología", points: 250 },
+      { id: 8, emoji: "📋", name: "Análisis de laboratorio", points: 200 },
     ]
   },
   {
-    name: "Membresía Oro",
+    name: "ORO",
     emoji: "🥇",
-    color: "text-[#FFD700]",
-    bg: "bg-[#FFD700]/10",
-    border: "border-[#FFD700]/20",
     items: [
       { id: 9, emoji: "🏋️", name: "Mes en gimnasio", points: 500 },
-      { id: 10, emoji: "🩺", name: "Consulta interna", points: 500 },
-      { id: 11, emoji: "💅", name: "Sesión estética", points: 400 },
+      { id: 10, emoji: "🩺", name: "Consulta interna sin cargo", points: 500 },
+      { id: 11, emoji: "💅", name: "Sesión en estética", points: 400 },
       { id: 12, emoji: "🧘", name: "Clase de yoga", points: 350 },
     ]
   },
   {
-    name: "Membresía Premium",
+    name: "PREMIUM",
     emoji: "💎",
-    color: "text-[#7F77DD]",
-    bg: "bg-[#7F77DD]/10",
-    border: "border-[#7F77DD]/20",
     items: [
-      { id: 13, emoji: "🌿", name: "Consulta nutrición", points: 600 },
-      { id: 14, emoji: "👁️", name: "Control oculista", points: 600 },
-      { id: 15, emoji: "🦴", name: "Consulta trauma.", points: 700 },
-      { id: 16, emoji: "⭐", name: "Beneficio VIP", points: 800 },
+      { id: 13, emoji: "🌿", name: "Consulta con nutricionista", points: 600 },
+      { id: 14, emoji: "👁️", name: "Control oftalmológico", points: 600 },
+      { id: 15, emoji: "🦴", name: "Consulta traumatológica", points: 700 },
+      { id: 16, emoji: "⭐", name: "Beneficio VIP personalizado", points: 800 },
     ]
   }
 ];
@@ -73,7 +61,6 @@ export function HomeView({ setActiveTab }) {
   const [generatingFor, setGeneratingFor] = useState(null);
 
   useEffect(() => {
-    // Load local session directly
     try {
       const s = JSON.parse(localStorage.getItem("wr_session") || "null");
       setSession(s);
@@ -91,9 +78,8 @@ export function HomeView({ setActiveTab }) {
       .catch(() => {});
   }, []);
 
-  // ── Capture install prompt ─────────────────────────────────────────────────
+  // PWA logic
   useEffect(() => {
-    // Si ya está instalado (standalone) no mostrar nunca
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setInstalled(true);
     }
@@ -138,7 +124,7 @@ export function HomeView({ setActiveTab }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           patientWallet: session.wallet,
-          commerceName: "Comercio Adherido", // Generic fallback
+          commerceName: "Comercio Adherido",
           points: item.points,
         }),
       });
@@ -190,100 +176,93 @@ export function HomeView({ setActiveTab }) {
           </div>
         )}
 
-        {/* Modal de Instrucciones iOS/PC */}
+        {/* Modal Instrucciones iOS/PC */}
         {showInstallInstructions && (
-          <div
-            className="fixed inset-0 z-50 flex items-end justify-center"
-            onClick={() => setShowInstallInstructions(false)}
-          >
+          <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setShowInstallInstructions(false)}>
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <div
-              className="relative w-full max-w-sm bg-white rounded-t-[24px] p-6 pb-10 flex flex-col gap-4 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div className="relative w-full max-w-sm bg-white rounded-t-[24px] p-6 pb-10 flex flex-col gap-4 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]" onClick={(e) => e.stopPropagation()}>
               <div className="w-10 h-1.5 bg-gray-300 rounded-full mx-auto mb-1" />
               <p className="font-black text-[#1A1A2E] text-lg">Cómo instalar</p>
-              <div className="flex flex-col gap-3">
-                <div className="flex items-start gap-3">
-                  <span className="text-xl">🍎</span>
-                  <div>
-                    <p className="text-sm font-bold text-[#1A1A2E]">iPhone / iPad</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Tocá el botón Compartir (<strong>⬆</strong>) y luego <strong>"Agregar a inicio"</strong></p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-xl">🤖</span>
-                  <div>
-                    <p className="text-sm font-bold text-[#1A1A2E]">Android</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Tocá el menú <strong>⋮</strong> del navegador y elegí <strong>"Agregar a pantalla de inicio"</strong></p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-xl">💻</span>
-                  <div>
-                    <p className="text-sm font-bold text-[#1A1A2E]">PC / Mac</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Hacé clic en el ícono <strong>⊕</strong> en la barra de direcciones del navegador</p>
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowInstallInstructions(false)}
-                className="mt-2 w-full py-3 rounded-[14px] bg-[#7F77DD] text-white font-bold text-sm active:scale-95 transition-transform"
-              >
+              <button onClick={() => setShowInstallInstructions(false)} className="mt-2 w-full py-3 rounded-[14px] bg-[#7F77DD] text-white font-bold text-sm active:scale-95 transition-transform">
                 Entendido
               </button>
             </div>
           </div>
         )}
 
-        {/* Beneficios organizados por Tiers */}
-        <div className="flex flex-col gap-8 w-full">
+        {/* Tus WaitPoints disponibles */}
+        <div className="bg-[#7F77DD] text-white rounded-[20px] shadow-[0_4px_16px_rgba(127,119,221,0.3)] p-6 flex flex-col items-center">
+          <h2 className="text-sm font-bold uppercase tracking-widest opacity-90 mb-1">Tus WaitPoints disponibles</h2>
+          <div className="flex items-baseline gap-2">
+            <span className="text-6xl font-black">{currentPts}</span>
+            <span className="text-lg font-bold opacity-80">WP</span>
+          </div>
+          <span className="mt-2 bg-white/20 text-white font-black text-[13px] px-4 py-1.5 rounded-full backdrop-blur-sm">
+            = ${(currentPts / 100).toFixed(2)} en descuentos
+          </span>
+        </div>
+
+        {/* Catálogo tipo McDonald's */}
+        <div className="flex flex-col gap-8 w-full mt-2">
           {TIERS.map((tier, tIdx) => (
             <div key={tIdx} className="w-full">
-              <div className="flex flex-col items-center mb-4">
-                <span className="text-xl px-4 py-1.5 bg-[#F8F7FF] rounded-full border border-gray-200 uppercase tracking-widest font-black text-[#1A1A2E] text-[11px] shadow-sm">
-                  {tier.emoji} {tier.name} {tier.emoji}
-                </span>
-                <div className="w-full h-px bg-gray-200 mt-3 relative">
-                  <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full ${tier.bg} ${tier.border} border`} />
-                </div>
-              </div>
+              
+              <h2 className="text-lg font-black text-[#1A1A2E] flex items-center gap-2 mb-3 px-1">
+                <span className="text-2xl">{tier.emoji}</span> {tier.name}
+              </h2>
 
-              {/* Grid de Cards */}
+              {/* Grid 2x2 en mobile, 4x4 en desktop */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
                 {tier.items.map((item) => {
                   const canRedeem = currentPts >= item.points;
                   const isGenerating = generatingFor === item.id;
                   
-                  return (
+                  return canRedeem ? (
+                    // ── ESTADO APROBADO (Blanco y Violeta) ──
                     <div
                       key={item.id}
-                      className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-4 flex flex-col items-center text-center relative border border-transparent hover:border-[#7F77DD]/20 transition-colors w-full min-w-0"
+                      className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-4 flex flex-col items-center text-center border-2 border-[#7F77DD] w-full min-w-0"
                     >
-                      <span className="text-[40px] leading-none mb-3">{item.emoji}</span>
+                      <span className="text-[40px] leading-none mb-2">{item.emoji}</span>
                       
                       <h3 className="text-[13px] font-bold text-[#1A1A2E] leading-tight flex-1 flex items-center justify-center min-h-[40px] px-1 w-full">
                         {item.name}
                       </h3>
                       
-                      <div className="mt-3 w-full">
-                        <div className="inline-block bg-[#7F77DD]/10 text-[#7F77DD] px-3 py-1 rounded-[8px] font-black text-xs mb-3 shadow-[inset_0_1px_3px_rgba(127,119,221,0.1)]">
+                      <div className="mt-2 w-full">
+                        <div className="inline-block bg-[#7F77DD]/10 text-[#7F77DD] px-3 py-1 rounded-[8px] font-black text-xs mb-3">
                           {item.points} WP
                         </div>
 
-                        {canRedeem ? (
-                          <button
-                            onClick={() => handleRedeem(item)}
-                            disabled={isGenerating}
-                            className="w-full py-2.5 rounded-[12px] bg-[#7F77DD] text-white font-bold text-xs active:scale-[0.98] transition-transform disabled:opacity-60 flex items-center justify-center shadow-[0_4px_12px_rgba(127,119,221,0.3)]"
-                          >
-                            {isGenerating ? <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : "Canjear"}
-                          </button>
-                        ) : (
-                          <div className="w-full py-2.5 rounded-[12px] bg-[#F8F7FF] border border-gray-100 flex items-center justify-center">
-                            <span className="text-[10px] text-gray-500 font-bold tracking-wide uppercase">Faltan {item.points - currentPts} WP</span>
-                          </div>
-                        )}
+                        <button
+                          onClick={() => handleRedeem(item)}
+                          disabled={isGenerating}
+                          className="w-full py-2.5 rounded-[12px] bg-[#7F77DD] text-white font-bold text-[13px] active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center shadow-[0_4px_12px_rgba(127,119,221,0.3)]"
+                        >
+                          {isGenerating ? <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : "Canjear"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    // ── ESTADO BLOQUEADO (Gris) ──
+                    <div
+                      key={item.id}
+                      className="bg-gray-100 rounded-[16px] p-4 flex flex-col items-center text-center border-2 border-transparent w-full min-w-0"
+                    >
+                      <span className="text-[40px] leading-none mb-2 opacity-40 grayscale">{item.emoji}</span>
+                      
+                      <h3 className="text-[13px] font-bold text-gray-500 leading-tight flex-1 flex items-center justify-center min-h-[40px] px-1 w-full">
+                        {item.name}
+                      </h3>
+                      
+                      <div className="mt-2 w-full flex flex-col gap-2 items-center">
+                        <div className="inline-block bg-gray-200 text-gray-500 px-3 py-1 rounded-[8px] font-black text-xs mb-1">
+                          {item.points} WP
+                        </div>
+
+                        <div className="w-full py-2.5 rounded-[12px] bg-gray-200 text-gray-500 font-bold text-[13px] text-center">
+                          Faltan {item.points - currentPts} WP
+                        </div>
                       </div>
                     </div>
                   );
@@ -293,7 +272,7 @@ export function HomeView({ setActiveTab }) {
           ))}
         </div>
 
-        {/* Comercios adheridos - Horizontal Scroll o Grid */}
+        {/* Comercios adheridos - Grid on Desktop */}
         <div className="mt-4 pt-8 border-t border-gray-200">
           <h2 className="font-bold text-[#1A1A2E] text-lg mb-4 px-1 flex items-center gap-2"><span>🏪</span> Comercios adheridos</h2>
           
@@ -312,9 +291,6 @@ export function HomeView({ setActiveTab }) {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-[#1A1A2E] truncate">{c.commerce_name}</p>
                   <p className="text-[11px] text-gray-500 mb-1 truncate">{c.category || "General"}</p>
-                  <span className="inline-flex items-center gap-1 bg-[#22C55E]/10 text-[#22C55E] text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]"></span> Activo
-                  </span>
                 </div>
               </div>
             ))}
@@ -336,7 +312,7 @@ export function HomeView({ setActiveTab }) {
   );
 }
 
-// ── QR Modal (Para mostrar el QR generado) ──────────────────────────────────
+// ── QR Modal ──────────────────────────────────────────────────────────────────
 function QRRewardModal({ data, onClose }) {
   const expiryStr = data.expiresAt
     ? new Date(data.expiresAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })
