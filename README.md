@@ -4,9 +4,9 @@
 > *"Your time has value. Now we prove it."*
 
 [![Avalanche Fuji](https://img.shields.io/badge/Avalanche-Fuji%20Testnet-E84142?logo=avalanche)](https://testnet.snowtrace.io/address/0xAad6125bE3E57473fb575af47c4B96253c1bEEEa)
-[![Live Demo](https://img.shields.io/badge/Demo-Live-22C55E)](https://waitreward.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Demo-Live-22C55E)](https://hormi.vercel.app)
 [![Backend](https://img.shields.io/badge/Backend-Railway-7F77DD)](https://waitreward-production.up.railway.app/health)
-[![PWA](https://img.shields.io/badge/PWA-Installable-7F77DD)](https://waitreward.vercel.app)
+[![PWA](https://img.shields.io/badge/PWA-Installable-7F77DD)](https://hormi.vercel.app)
 
 ---
 
@@ -43,7 +43,7 @@ Think Starbucks Stars — but for healthcare. Fully on-chain. Automatic. Invisib
 
 ## Live Demo
 
-🌐 **https://waitreward.vercel.app**
+🌐 **https://hormi.vercel.app**
 
 | Role | Login |
 |------|-------|
@@ -125,7 +125,7 @@ Think Starbucks Stars — but for healthcare. Fully on-chain. Automatic. Invisib
 - Dark/Light mode
 - English/Spanish (i18n)
 - QR generation + camera scanning
-- **URL:** https://waitreward.vercel.app
+- **URL:** https://hormi.vercel.app
 
 ---
 
