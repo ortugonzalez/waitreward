@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HORMI — Your time has value</title>
+  <meta name="description" content="HORMI transforms medical wait time into real rewards. Powered by Avalanche blockchain.">
+  <meta property="og:title" content="HORMI — Your time has value">
+  <meta property="og:description" content="Stop waiting for nothing. Start earning while you wait.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --violet: #7F77DD;
+      --violet-dark: #5B52CC;
+      --violet-light: #EEECFa;
+      --green: #22C55E;
+      --dark: #0F0F1A;
+      --text: #1A1A2E;
+      --gray: #666;
+      --light: #F8F7FF;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--light);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; width: 100%; z-index: 100;
+      background: rgba(248,247,255,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid #E5E7EB;
+      padding: 16px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 800; font-size: 20px; color: var(--violet-dark);
+      text-decoration: none;
+    }
+    .nav-logo span { font-size: 24px; }
+    .nav-cta {
+      background: var(--violet); color: white;
+      border: none; border-radius: 10px;
+      padding: 10px 20px; font-size: 14px; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .nav-cta:hover { background: var(--violet-dark); transform: translateY(-1px); }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; text-align: center;
+      padding: 120px 24px 80px;
+      background: linear-gradient(180deg, #F8F7FF 0%, #EEECFa 100%);
+    }
+    .hero-badge {
+      background: var(--violet-light);
+      border: 1px solid var(--violet);
+      color: var(--violet-dark);
+      border-radius: 99px; padding: 6px 16px;
+      font-size: 13px; font-weight: 600;
+      margin-bottom: 24px; display: inline-block;
+    }
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 72px);
+      font-weight: 900; line-height: 1.1;
+      color: var(--text); margin-bottom: 12px;
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, #7F77DD, #5B52CC);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-sub {
+      font-size: clamp(16px, 2vw, 22px);
+      color: var(--gray); max-width: 600px;
+      margin: 0 auto 40px; line-height: 1.6;
+    }
+    .hero-buttons {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      justify-content: center; margin-bottom: 60px;
+    }
+    .btn-primary {
+      background: var(--violet); color: white;
+      border: none; border-radius: 14px;
+      padding: 16px 32px; font-size: 16px; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+      transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(127,119,221,0.4);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(127,119,221,0.5); }
+    .btn-secondary {
+      background: white; color: var(--violet);
+      border: 2px solid var(--violet); border-radius: 14px;
+      padding: 14px 32px; font-size: 16px; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover { background: var(--violet-light); }
+
+    /* STATS */
+    .stats {
+      display: flex; gap: 32px; flex-wrap: wrap;
+      justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 32px; font-weight: 900; color: var(--violet);
+    }
+    .stat-label {
+      font-size: 13px; color: var(--gray); margin-top: 4px;
+    }
+
+    /* SECTION */
+    section {
+      padding: 80px 24px;
+      max-width: 1100px; margin: 0 auto;
+    }
+    .section-label {
+      color: var(--violet); font-size: 13px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 800; line-height: 1.2;
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      font-size: 18px; color: var(--gray);
+      max-width: 600px; line-height: 1.6;
+    }
+
+    /* HOW IT WORKS */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px; margin-top: 48px;
+    }
+    .step {
+      background: white; border-radius: 20px;
+      padding: 28px 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      transition: transform 0.2s;
+    }
+    .step:hover { transform: translateY(-4px); }
+    .step-number {
+      width: 40px; height: 40px;
+      background: var(--violet-light);
+      color: var(--violet-dark);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 18px;
+      margin-bottom: 16px;
+    }
+    .step h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .step p { font-size: 14px; color: var(--gray); line-height: 1.5; }
+
+    /* WHO WINS */
+    .winners {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px; margin-top: 48px;
+    }
+    .winner-card {
+      border-radius: 20px; padding: 32px;
+      transition: transform 0.2s;
+    }
+    .winner-card:hover { transform: translateY(-4px); }
+    .winner-card.patient { background: #EEF2FF; }
+    .winner-card.clinic { background: #F0FDF4; }
+    .winner-card.commerce { background: #FFF7ED; }
+    .winner-card.hormi { background: linear-gradient(135deg, #7F77DD, #5B52CC); color: white; }
+    .winner-emoji { font-size: 36px; margin-bottom: 16px; }
+    .winner-title { font-size: 20px; font-weight: 800; margin-bottom: 12px; }
+    .winner-list { list-style: none; }
+    .winner-list li {
+      font-size: 14px; line-height: 1.6; padding: 4px 0;
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .winner-list li::before { content: "✓"; font-weight: 700; flex-shrink: 0; }
+    .winner-card.hormi .winner-list li::before { color: #C4BEFF; }
+    .winner-card.patient .winner-list li::before { color: var(--violet); }
+    .winner-card.clinic .winner-list li::before { color: var(--green); }
+    .winner-card.commerce .winner-list li::before { color: #F97316; }
+
+    /* TECH */
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px; margin-top: 48px;
+    }
+    .tech-card {
+      background: white; border-radius: 16px;
+      padding: 24px; text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      border: 1px solid #F0EEff;
+    }
+    .tech-icon { font-size: 32px; margin-bottom: 12px; }
+    .tech-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .tech-desc { font-size: 13px; color: var(--gray); }
+
+    /* CTA FINAL */
+    .cta-section {
+      background: linear-gradient(135deg, #7F77DD, #5B52CC);
+      color: white; text-align: center;
+      padding: 80px 24px; margin: 0;
+      max-width: 100%;
+    }
+    .cta-section h2 {
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 900; margin-bottom: 16px;
+    }
+    .cta-section p {
+      font-size: 18px; opacity: 0.85;
+      max-width: 500px; margin: 0 auto 40px;
+    }
+    .btn-white {
+      background: white; color: var(--violet-dark);
+      border: none; border-radius: 14px;
+      padding: 16px 40px; font-size: 16px; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+      transition: all 0.2s;
+      display: inline-block;
+    }
+    .btn-white:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.2); }
+
+    /* FOOTER */
+    footer {
+      background: var(--dark); color: #888;
+      padding: 40px 24px; text-align: center;
+    }
+    footer .footer-logo {
+      font-size: 24px; font-weight: 900; color: white;
+      margin-bottom: 8px;
+    }
+    footer p { font-size: 13px; line-height: 1.6; }
+    footer a { color: #A89FEE; text-decoration: none; }
+
+    /* CONTRACT BADGE */
+    .contract-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(127,119,221,0.1);
+      border: 1px solid rgba(127,119,221,0.3);
+      border-radius: 99px; padding: 8px 16px;
+      font-size: 12px; color: var(--violet);
+      font-family: monospace; margin-top: 32px;
+    }
+    .contract-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    @media (max-width: 600px) {
+      .hero-buttons { flex-direction: column; align-items: center; }
+      .btn-primary, .btn-secondary { width: 100%; max-width: 300px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <span>🐜</span> HORMI
+  </a>
+  <a href="https://waitreward.vercel.app" class="nav-cta" target="_blank">
+    Try the demo →
+  </a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">🏥 Built on Avalanche · Aleph Hackathon 2026</div>
+  <h1>Your time has value.<br><span>Now we prove it.</span></h1>
+  <p class="hero-sub">
+    HORMI transforms medical wait time into real rewards.
+    Every minute you wait, you earn points. No apps to download.
+    No wallets needed. Just your ID.
+  </p>
+  <div class="hero-buttons">
+    <a href="https://waitreward.vercel.app" class="btn-primary" target="_blank">
+      🐜 Try HORMI now
+    </a>
+    <a href="https://github.com/ortugonzalez/waitreward" class="btn-secondary" target="_blank">
+      View on GitHub
+    </a>
+  </div>
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-number">15M+</div>
+      <div class="stat-label">annual consultations in Argentina</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">45 min</div>
+      <div class="stat-label">average wait beyond schedule</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">$0</div>
+      <div class="stat-label">compensation received. Until now.</div>
+    </div>
+  </div>
+  <a href="https://testnet.snowtrace.io/address/0xAad6125bE3E57473fb575af47c4B96253c1bEEEa"
+     class="contract-badge" target="_blank">
+    <span class="contract-dot"></span>
+    Contract live · 0xAad6125bE3E57...EEa · Avalanche Fuji
+  </a>
+</div>
+
+<!-- HOW IT WORKS -->
+<section>
+  <div class="section-label">How it works</div>
+  <h2 class="section-title">Simple. Automatic. Invisible.</h2>
+  <p class="section-sub">
+    The clinic doesn't change anything. The patient doesn't need a wallet.
+    Everything happens on-chain, automatically.
+  </p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-number">1</div>
+      <h3>Clinic registers</h3>
+      <p>The receptionist enters the patient's ID and the actual attendance time.</p>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <h3>Smart contract calculates</h3>
+      <p>HORMI automatically calculates the delay and mints points on Avalanche.</p>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <h3>Patient gets notified</h3>
+      <p>"Your time has value — here are 150 HORMI Points." Push notification, instant.</p>
+    </div>
+    <div class="step">
+      <div class="step-number">4</div>
+      <h3>Patient redeems</h3>
+      <p>Coffee, pharmacy, psychology, gym — real benefits at partner businesses.</p>
+    </div>
+    <div class="step">
+      <div class="step-number">5</div>
+      <h3>Protocol earns</h3>
+      <p>3% fee on every redemption, automatically deducted on-chain. No middlemen.</p>
+    </div>
+  </div>
+</section>
+
+<!-- WHO WINS -->
+<section style="background: #F8F7FF; max-width: 100%; padding: 80px 24px;">
+  <div style="max-width: 1100px; margin: 0 auto;">
+    <div class="section-label">Everyone wins. Always.</div>
+    <h2 class="section-title">A system where nobody loses</h2>
+    <div class="winners">
+      <div class="winner-card patient">
+        <div class="winner-emoji">🧑‍⚕️</div>
+        <div class="winner-title">Patient</div>
+        <ul class="winner-list">
+          <li>Real compensation for lost time</li>
+          <li>Access to health services</li>
+          <li>No crypto knowledge needed</li>
+          <li>Push notifications in real time</li>
+        </ul>
+      </div>
+      <div class="winner-card clinic">
+        <div class="winner-emoji">🏥</div>
+        <div class="winner-title">Clinic</div>
+        <ul class="winner-list">
+          <li>Fewer bad reviews and complaints</li>
+          <li>Higher patient retention</li>
+          <li>AI delay prediction by specialty</li>
+          <li>Analytics dashboard + PDF reports</li>
+        </ul>
+      </div>
+      <div class="winner-card commerce">
+        <div class="winner-emoji">🏪</div>
+        <div class="winner-title">Business</div>
+        <ul class="winner-list">
+          <li>New customers from the network</li>
+          <li>Monthly membership model</li>
+          <li>QR redemption tracking</li>
+          <li>No cost per individual redemption</li>
+        </ul>
+      </div>
+      <div class="winner-card hormi">
+        <div class="winner-emoji">🐜</div>
+        <div class="winner-title">HORMI</div>
+        <ul class="winner-list">
+          <li>3% fee per redemption (on-chain)</li>
+          <li>Commerce monthly memberships</li>
+          <li>Clinic SaaS subscription</li>
+          <li>Scalable across LATAM</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TECH -->
+<section>
+  <div class="section-label">Technology</div>
+  <h2 class="section-title">Built for the real world</h2>
+  <p class="section-sub">
+    Full stack on Avalanche. AI-powered. PWA installable.
+    No blockchain knowledge required for end users.
+  </p>
+  <div class="tech-grid">
+    <div class="tech-card">
+      <div class="tech-icon">⛓️</div>
+      <div class="tech-name">Avalanche Fuji</div>
+      <div class="tech-desc">ERC-20 token minted on demand. 3% fee auto-deducted per redemption.</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-icon">🤖</div>
+      <div class="tech-name">AI Module</div>
+      <div class="tech-desc">Flask + scikit-learn. Predicts delays by specialty before they happen.</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-icon">📱</div>
+      <div class="tech-name">PWA</div>
+      <div class="tech-desc">Installable on iOS, Android and Desktop. Push notifications via VAPID.</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-icon">🗄️</div>
+      <div class="tech-name">Supabase</div>
+      <div class="tech-desc">Real-time PostgreSQL. Auth by DNI. 6 tables. No wallet required.</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-icon">🔒</div>
+      <div class="tech-name">Secure</div>
+      <div class="tech-desc">HTTPS everywhere. Encrypted env vars. No private keys exposed.</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-icon">🌍</div>
+      <div class="tech-name">Bilingual</div>
+      <div class="tech-desc">Full English / Spanish toggle. Built for LATAM, readable by anyone.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section">
+  <h2>Ready to turn wait time into value?</h2>
+  <p>Try the live demo. No registration. No wallet. Just your ID.</p>
+  <a href="https://waitreward.vercel.app" class="btn-white" target="_blank">
+    🐜 Open HORMI
+  </a>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">🐜 HORMI</div>
+  <p>
+    Built by <strong style="color: white;">Octavio</strong> for Aleph Hackathon March 2026.<br>
+    Named after my grandmother Josefina — "hormiguita negra" — small, tireless, always working.<br><br>
+    <a href="https://github.com/ortugonzalez/waitreward">GitHub</a> ·
+    <a href="https://testnet.snowtrace.io/address/0xAad6125bE3E57473fb575af47c4B96253c1bEEEa">Snowtrace</a> ·
+    <a href="https://waitreward.vercel.app">Live Demo</a>
+  </p>
+</footer>
+
+</body>
+</html>
