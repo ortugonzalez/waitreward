@@ -57,71 +57,76 @@ export function PatientView({ session, onLogout }) {
     }
   }, [session?.wallet]);
 
-  const subscribeToNotifications = useCallback(async () => {
-    console.log("Intentando suscribir push...");
-    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
-      toast.error("Tu navegador no soporta notificaciones.");
-      return;
-    }
-    setNotifState("pending");
+  const subscribeToNotifications = async () => {
     try {
-      const permission = await Notification.requestPermission();
-      console.log("Permission result:", permission);
-      if (permission !== "granted") {
-        setNotifState("denied");
-        toast.error("Permiso de notificaciones denegado.");
+      if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+        alert("Tu navegador no soporta notificaciones push.");
         return;
       }
 
-      const registration = await navigator.serviceWorker.ready;
-      console.log("SW ready:", registration);
+      // 1. Pedir permiso
+      const permission = await Notification.requestPermission();
+      console.log("Push permission:", permission);
+      if (permission !== "granted") {
+        setNotifState("denied");
+        return;
+      }
+      setNotifState("pending");
 
-      // Obtener VAPID key del backend
+      // 2. Obtener VAPID key — backend devuelve { key: "..." }
       const vapidRes = await fetch(`${API_URL}/api/push/vapid-public-key`);
       const { key: vapidKey } = await vapidRes.json();
-      console.log("VAPID key:", vapidKey);
+      console.log("VAPID key:", vapidKey?.substring(0, 20) + "...");
 
-      // Convertir VAPID key de base64url a Uint8Array
-      const urlBase64 = vapidKey.replace(/-/g, "+").replace(/_/g, "/");
-      const padding = "=".repeat((4 - (urlBase64.length % 4)) % 4);
-      const base64 = urlBase64 + padding;
-      const rawKey = atob(base64);
-      const applicationServerKey = Uint8Array.from([...rawKey].map((c) => c.charCodeAt(0)));
+      // 3. Convertir base64url → Uint8Array
+      const urlBase64ToUint8Array = (base64String) => {
+        const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; i++) {
+          outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+      };
+
+      // 4. Registrar con el SW
+      const registration = await navigator.serviceWorker.ready;
+      console.log("SW scope:", registration.scope);
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
-      console.log("Subscription created:", subscription.endpoint);
+      console.log("Endpoint:", subscription.endpoint?.substring(0, 50) + "...");
 
+      // 5. Guardar en backend — espera { wallet, subscription }
       const res = await fetch(`${API_URL}/api/push/subscribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ wallet: session.wallet, subscription }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || "Error al guardar suscripción");
+      console.log("Subscribe response:", data);
 
-      setNotifState("granted");
-      toast.success("🔔 ¡Notificaciones activadas!");
+      if (data.success) {
+        setNotifState("granted");
+        toast.success("🔔 ¡Notificaciones activadas!");
+      } else {
+        throw new Error(data.error || "Error al guardar suscripción");
+      }
     } catch (err) {
       console.error("Push subscribe error:", err);
       setNotifState("idle");
-      toast.error("Error al activar notificaciones.");
+      alert(`Error push: ${err.message}`);
     }
-  }, [session?.wallet]);
+  };
 
-  // Al montar: detectar si ya tiene permiso y suscribir silenciosamente
+  // Al montar: sincronizar estado con el permiso actual del browser
   useEffect(() => {
     if (!("Notification" in window)) return;
-    if (Notification.permission === "granted") {
-      setNotifState("granted");
-      // Re-suscribir silenciosamente por si cambió el endpoint
-      subscribeToNotifications();
-    } else if (Notification.permission === "denied") {
-      setNotifState("denied");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (Notification.permission === "granted") setNotifState("granted");
+    else if (Notification.permission === "denied") setNotifState("denied");
   }, []);
 
   useEffect(() => {
