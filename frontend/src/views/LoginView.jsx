@@ -10,6 +10,8 @@ export function LoginView({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
   // PWA States
   const [installPrompt, setInstallPrompt] = useState(null);
   const [installed, setInstalled] = useState(false);
@@ -69,7 +71,6 @@ export function LoginView({ onLogin }) {
         return;
       }
 
-      // Guardar sesión en localStorage
       const session = {
         name: data.user.name,
         role: data.user.role,
@@ -87,14 +88,30 @@ export function LoginView({ onLogin }) {
     }
   };
 
+  const storedSessionStr = typeof window !== 'undefined' ? localStorage.getItem("wr_session") : null;
+  const storedSession = storedSessionStr ? JSON.parse(storedSessionStr) : null;
+
   return (
-    <div className="flex flex-col min-h-screen bg-[#F8F7FF] font-sans">
-      {/* Header */}
-      <div className="bg-[#7F77DD] text-white pt-10 pb-16 px-6 rounded-b-[40px] shadow-[0_4px_24px_rgba(127,119,221,0.3)] relative overflow-hidden">
+    <div className="flex flex-col min-h-[100dvh] bg-[#F8F7FF] font-sans pt-[max(0px,env(safe-area-inset-top))]">
+      
+      {/* ── MOBILE HEADER CON HAMBURGUESA ── */}
+      <div className="lg:hidden flex items-center px-4 py-3 bg-[#7F77DD] z-40 sticky top-0 justify-between">
+          <button 
+              onClick={() => setDrawerOpen(true)} 
+              className="text-2xl p-1 text-[#7F77DD] bg-white/20 rounded-lg flex items-center justify-center w-10 h-10 active:scale-95 border border-white/30"
+          >
+              <span className="text-white">☰</span>
+          </button>
+          <div className="font-black text-lg text-white tracking-tight">Login</div>
+          <div className="w-10"></div>
+      </div>
+
+      {/* Header Splash */}
+      <div className="bg-[#7F77DD] text-white pt-6 pb-16 px-6 rounded-b-[40px] shadow-[0_4px_24px_rgba(127,119,221,0.3)] relative overflow-hidden">
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
         <div className="absolute bottom-0 -left-10 w-32 h-32 bg-[#9B8FE8]/50 rounded-full blur-2xl" />
-        <div className="relative z-10 pt-4">
-          <h1 className="text-[32px] leading-tight font-black tracking-tight">
+        <div className="relative z-10">
+          <h1 className="text-[32px] leading-tight font-black tracking-tight" style={{ paddingTop: "env(safe-area-inset-top)" }}>
             Bienvenido a HORMI
           </h1>
           <p className="text-[15px] font-medium opacity-90 mt-2">
@@ -105,7 +122,6 @@ export function LoginView({ onLogin }) {
 
       <div className="px-5 -mt-8 flex flex-col gap-5 relative z-20 pb-10">
 
-        {/* Error general */}
         {error && (
           <div className="bg-red-50 border border-red-100 rounded-[12px] p-3 flex items-center gap-2 animate-fade-in shadow-sm">
             <span className="text-red-500 text-lg">⚠️</span>
@@ -113,13 +129,10 @@ export function LoginView({ onLogin }) {
           </div>
         )}
 
-        {/* Inputs Cards */}
         <div className="bg-white rounded-[20px] shadow-[0_8px_24px_rgba(0,0,0,0.06)] p-6 border-2 border-transparent">
           <h2 className="text-xl font-black text-[#1A1A2E] mb-4">¿Cómo querés ingresar?</h2>
 
           <div className="flex flex-col gap-6">
-
-            {/* Paciente */}
             <form onSubmit={(e) => handleLogin(e, "patient", dni)} className="flex flex-col gap-2">
               <label className="text-[13px] font-bold text-[#1A1A2E] flex items-center gap-2">
                 <span className="text-xl">🧑‍⚕️</span> Soy paciente
@@ -144,7 +157,6 @@ export function LoginView({ onLogin }) {
 
             <div className="h-px bg-gray-100" />
 
-            {/* Médico */}
             <form onSubmit={(e) => handleLogin(e, "clinic", medicCode)} className="flex flex-col gap-2">
               <label className="text-[13px] font-bold text-[#1A1A2E] flex items-center gap-2">
                 <span className="text-xl">👨‍⚕️</span> Soy médico
@@ -169,7 +181,6 @@ export function LoginView({ onLogin }) {
 
             <div className="h-px bg-gray-100" />
 
-            {/* Comercio */}
             <form onSubmit={(e) => handleLogin(e, "commerce", commerceAddress)} className="flex flex-col gap-2">
               <label className="text-[13px] font-bold text-[#1A1A2E] flex items-center gap-2">
                 <span className="text-xl">🏪</span> Soy comercio
@@ -191,7 +202,6 @@ export function LoginView({ onLogin }) {
                 </button>
               </div>
             </form>
-
           </div>
         </div>
 
@@ -230,7 +240,7 @@ export function LoginView({ onLogin }) {
             <span className="text-3xl">📲</span>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-[#1A1A2E]">Instalá HORMI</p>
-              <p className="text-[11px] text-gray-500">Accedé desde tu pantalla de inicio</p>
+              <p className="text-[11px] text-gray-500">Accedé como aplicación nativa</p>
             </div>
             <button
               onClick={installPrompt ? handleInstall : () => setShowInstallInstructions(true)}
@@ -243,12 +253,51 @@ export function LoginView({ onLogin }) {
 
       </div>
 
-      {/* PWA Modal de Instrucciones FIX 2 */}
+      {/* ── MOBILE DRAWER (HAMBURGER MENU) IN LOGINVIEW ── */}
+      {drawerOpen && (
+          <div className="fixed inset-0 z-[9999] lg:hidden flex">
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
+              
+              <div className="relative w-[280px] h-full bg-white shadow-2xl flex flex-col animate-slide-right">
+                  <div className="p-6 bg-[#7F77DD] text-white flex flex-col gap-4">
+                      <button onClick={() => setDrawerOpen(false)} className="absolute top-4 right-4 text-white/70 hover:text-white text-xl">✕</button>
+                      
+                      <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center font-black text-2xl text-[#7F77DD] shadow-sm">
+                          {storedSession?.name ? storedSession.name.charAt(0).toUpperCase() : "I"}
+                      </div>
+                      <div className="flex flex-col">
+                          <span className="font-black text-lg leading-tight truncate">{storedSession?.name || "Invitado"}</span>
+                          <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest mt-1">
+                              {storedSession ? 'RESTAURAR SESIÓN' : 'SIN SESIÓN ACTIVA'}
+                          </span>
+                      </div>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto py-4 flex flex-col gap-1 px-3">
+                      <div className="text-sm font-medium text-gray-500 px-2 mt-4 text-center">
+                          {storedSession 
+                            ? "Tu sesión exite. Podés iniciar nuevamente con Demo Express o recargando."
+                            : "Por favor, ingresá para navegar en HORMI."}
+                      </div>
+                  </div>
+                  
+                  {storedSession && (
+                      <div className="p-4 border-t border-gray-100 mb-4">
+                          <button onClick={() => { localStorage.removeItem("wr_session"); setDrawerOpen(false); window.location.reload(); }} className="w-full text-left px-4 py-3 text-red-600 font-bold flex items-center gap-3 bg-red-50 hover:bg-red-100 rounded-[12px] transition-colors">
+                              <span className="text-lg">🚪</span> Cerrar sesión real
+                          </button>
+                      </div>
+                  )}
+              </div>
+          </div>
+      )}
+
+      {/* PWA Modal de Instrucciones FIX 5 */}
       {showInstallInstructions && (
         <>
           <div className="fixed inset-0 bg-black/50 z-[9998]" onClick={() => setShowInstallInstructions(false)}></div>
           
-          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] bg-white p-6 rounded-[16px] max-w-[340px] w-[90%] shadow-[0_20px_60px_rgba(0,0,0,0.3)] flex flex-col gap-4">
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] bg-white p-6 rounded-[16px] max-w-[340px] w-[90%] md:max-w-[420px] shadow-[0_20px_60px_rgba(0,0,0,0.3)] flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
             
             <button 
               onClick={() => setShowInstallInstructions(false)} 
@@ -258,32 +307,56 @@ export function LoginView({ onLogin }) {
             </button>
 
             <p className="font-black text-[#1A1A2E] text-lg mt-1">Cómo instalar</p>
-            <div className="flex flex-col gap-3">
+            
+            <div className="flex flex-col gap-4">
               <div className="flex items-start gap-3">
-                <span className="text-xl">🍎</span>
+                <span className="text-xl pt-0.5">🍎</span>
                 <div>
                   <p className="text-sm font-bold text-[#1A1A2E]">iPhone / iPad</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Tocá el botón Compartir (<strong>⬆</strong>) y luego <strong>"Agregar a inicio"</strong></p>
+                  <p className="text-xs text-gray-500 mt-0.5">Tocá el botón Compartir (<strong>⬆</strong>) en Safari y luego elegí <strong>"Agregar a inicio"</strong></p>
                 </div>
               </div>
+              
               <div className="flex items-start gap-3">
-                <span className="text-xl">🤖</span>
+                <span className="text-xl pt-0.5">🤖</span>
                 <div>
                   <p className="text-sm font-bold text-[#1A1A2E]">Android</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Tocá el menú <strong>⋮</strong> del navegador y elegí <strong>"Agregar a pantalla de inicio"</strong></p>
+                  <p className="text-xs text-gray-500 mt-0.5">Tocá el menú <strong>⋮</strong> del navegador Chrome y elegí <strong>"Agregar a pantalla de inicio"</strong></p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <span className="text-xl">💻</span>
-                <div>
-                  <p className="text-sm font-bold text-[#1A1A2E]">PC / Mac</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Hacé clic en el ícono <strong>⊕</strong> en la barra de direcciones del navegador</p>
+
+              <div className="h-px bg-gray-100 my-1" />
+              
+              <div className="flex flex-col gap-2">
+                <div className="flex items-start gap-3">
+                  <span className="text-xl pt-0.5">💻</span>
+                  <div>
+                    <p className="text-sm font-bold text-[#1A1A2E]">PC / Mac (Chrome)</p>
+                    <p className="text-[12px] text-gray-500 mt-0.5">Mirá tu barra de direcciones arriba y hacé clic en el ícono <strong>⊕</strong> o 💻 situado a la derecha:</p>
+                  </div>
                 </div>
+
+                <div className="relative mt-2 w-full mx-auto max-w-[300px]">
+                  <svg viewBox="0 0 300 40" className="w-full drop-shadow-sm rounded-[20px]">
+                    <rect x="0" y="0" width="300" height="40" rx="20" fill="#f1f3f4"/>
+                    <text x="20" y="25" fontSize="13" fill="#666" fontFamily="sans-serif">waitreward.vercel.app</text>
+                    <circle cx="270" cy="20" r="14" fill="#7F77DD" className="animate-pulse"/>
+                    <text x="263" y="25" fontSize="16" fill="white" fontWeight="bold">⊕</text>
+                  </svg>
+                  <div className="absolute right-6 top-11 bg-black text-white text-[10px] px-2 py-1 rounded-md font-bold whitespace-nowrap shadow-md">
+                    Hacé click aquí ↑
+                  </div>
+                </div>
+                
+                <p className="text-[11px] text-gray-400 italic text-center mt-2">
+                  Si no aparece el ícono, cerrá Chrome y volvé a abrirlo.
+                </p>
               </div>
             </div>
+
             <button
               onClick={() => setShowInstallInstructions(false)}
-              className="mt-2 w-full py-3 rounded-[14px] bg-[#7F77DD] text-white font-bold text-sm active:scale-95 transition-transform"
+              className="mt-3 w-full py-3 rounded-[14px] bg-[#7F77DD] text-white font-bold text-sm active:scale-95 transition-transform"
             >
               Entendido
             </button>

@@ -315,61 +315,63 @@ function QRRewardModal({ data, onClose }) {
   const conditionsNode = getConditions(data.name);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center font-sans" onClick={onClose}>
+    <div className="fixed inset-0 z-[10000] flex items-end sm:items-center justify-center font-sans" onClick={onClose}>
       <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" />
+      
       <div
-        className="relative w-full max-w-sm bg-white rounded-t-[24px] p-6 pb-10 flex flex-col items-center gap-5 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]"
+        className="relative w-full max-w-sm bg-white rounded-t-[24px] sm:rounded-[24px] shadow-[0_-10px_40px_rgba(0,0,0,0.2)] flex flex-col max-h-[90vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-1" />
-
-        <div className="w-full flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl bg-[#F8F7FF] p-2 rounded-[16px]">{data.emoji}</span>
-            <div>
-              <h2 className="text-[17px] font-black text-[#1A1A2E] leading-tight">{data.name}</h2>
-              <p className="text-[12px] font-bold text-[#22C55E] flex items-center gap-1">
-                <span>⏱️</span> Válido hasta el {expiryStr}
-              </p>
+        {/* Header stick */}
+        <div className="p-6 pb-2 shrink-0 flex flex-col items-center">
+          <div className="w-12 h-1.5 bg-gray-300 rounded-full mb-4 sm:hidden" />
+          <div className="w-full flex items-center justify-between">
+            <div className="flex items-center gap-3 w-full">
+              <span className="text-3xl bg-[#F8F7FF] p-2 rounded-[16px]">{data.emoji}</span>
+              <div className="flex-1">
+                <h2 className="text-[17px] font-black text-[#1A1A2E] leading-tight">{data.name}</h2>
+                <p className="text-[12px] font-bold text-[#22C55E] flex items-center gap-1 mt-0.5">
+                  <span>⏱️</span> Válido hasta el {expiryStr}
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* QR container */}
-        <div className="p-4 bg-white rounded-[24px] shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-[#F8F7FF] flex justify-center w-full">
-          <QRCodeSVG value={qrContent} size={220} bgColor="#ffffff" fgColor="#1A1A2E" level="M" />
-        </div>
-
-        {/* Textual code */}
-        <div className="bg-[#F8F7FF] rounded-[16px] px-6 py-3 w-full text-center border border-gray-100">
-          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Tu código</p>
-          <p className="font-mono text-xl text-[#1A1A2E] font-black tracking-[0.2em]">{data.qrCode}</p>
-        </div>
-
-        {/* Condiciones */}
-        {conditionsNode && (
-          <div className="bg-gray-50 w-full rounded-[16px] p-4 text-left border border-gray-100">
-            <p className="text-[12px] font-bold text-[#1A1A2E] mb-1 flex items-center gap-1">
-              <span>📋</span> Condiciones:
-            </p>
-            {conditionsNode}
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto w-full px-6 flex flex-col items-center gap-4 py-2" style={{ WebkitOverflowScrolling: "touch" }}>
+          
+          <div className="p-4 bg-white rounded-[24px] shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-[#F8F7FF] flex justify-center w-full">
+            <QRCodeSVG value={qrContent} size={180} bgColor="#ffffff" fgColor="#1A1A2E" level="M" />
           </div>
-        )}
 
-        <div className="flex w-full gap-3 mt-1">
-          <button
-            onClick={onClose}
-            className="flex-1 py-4 rounded-[16px] bg-[#F8F7FF] text-[#1A1A2E] font-bold text-[15px] active:scale-[0.98] transition-all"
-          >
-            Cerrar
-          </button>
-          <button
-            onClick={handleShare}
-            className="flex-1 py-4 rounded-[16px] bg-[#7F77DD] text-white font-bold text-[15px] active:scale-[0.98] transition-all shadow-[0_4px_12px_rgba(127,119,221,0.3)]"
-          >
-            Compartir
-          </button>
+          <div className="bg-[#F8F7FF] rounded-[16px] px-6 py-3 w-full text-center border border-gray-100">
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Tu código</p>
+            <p className="font-mono text-xl text-[#1A1A2E] font-black tracking-[0.2em]">{data.qrCode}</p>
+          </div>
+
+          {conditionsNode && (
+            <div className="bg-gray-50 w-full rounded-[16px] p-4 text-left border border-gray-100 mt-2 mb-2">
+              <p className="text-[12px] font-bold text-[#1A1A2E] mb-1 flex items-center gap-1">
+                <span>📋</span> Condiciones:
+              </p>
+              {conditionsNode}
+            </div>
+          )}
         </div>
+
+        {/* Bottom Buttons stick */}
+        <div className="p-6 pt-3 shrink-0 bg-white border-t border-gray-50 w-full">
+          <div className="flex w-full gap-3">
+            <button onClick={onClose} className="flex-1 py-3.5 rounded-[16px] bg-[#F8F7FF] text-[#1A1A2E] font-bold text-[15px] active:scale-[0.98] transition-all border border-gray-100">
+              Cerrar
+            </button>
+            <button onClick={handleShare} className="flex-1 py-3.5 rounded-[16px] bg-[#7F77DD] text-white font-bold text-[15px] active:scale-[0.98] transition-all shadow-sm">
+              Compartir
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   );
