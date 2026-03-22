@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 
 export const translations = {
   es: {
+    hello: "Hola",
     welcome: "Bienvenido a HORMI",
     subtitle: "Ingresá tus datos para acceder a tu panel.",
     tagline: "Tu tiempo vale. Ahora lo demostramos.",
@@ -15,8 +16,6 @@ export const translations = {
     darkMode: "Modo oscuro",
     lightMode: "Modo claro",
     language: "Idioma",
-
-    // Common
     update: "Actualizar",
     close: "Cerrar",
     
@@ -31,6 +30,7 @@ export const translations = {
     pointsDelivered: "Puntos entregados",
     appointmentsRegistered: "Turnos registrados",
     redemptionsMade: "Canjes realizados",
+    delayMinutes: "min demora",
 
     // Benefits (HomeView)
     yourAvailablePoints: "Tus Puntos HORMI disponibles",
@@ -41,6 +41,25 @@ export const translations = {
     premiumMembership: "MEMBRESÍA PREMIUM",
     redeem: "Canjear",
     missingPoints: "Faltan",
+    
+    // Cards
+    coffeeShop: "Café en local adherido",
+    pharmacyDiscount: "Descuento en farmacia",
+    psychology: "Sesión de psicología",
+    internalConsult: "Consulta interna sin cargo",
+    dentistry: "Descuento en odontología",
+    kinesiology: "Sesión de kinesiología",
+    labAnalysis: "Análisis de laboratorio",
+    gym: "Mes en gimnasio",
+    aesthetics: "Sesión en estética",
+    yoga: "Clase de yoga",
+    nutritionist: "Consulta con nutricionista",
+    ophthalmology: "Control oftalmológico",
+    traumatology: "Consulta traumatológica",
+    vipBenefit: "Beneficio VIP personalizado",
+    dietetics: "Descuento en dietética",
+    hairdresser: "Descuento en peluquería",
+    partnerBusinesses: "Comercios adheridos",
 
     // QR Modal
     qrTitle: "Tu código de canje",
@@ -61,6 +80,19 @@ export const translations = {
     analyticsTitle: "Analytics de la clínica",
     downloadPDF: "Descargar reporte PDF",
     contractStatus: "Estado del contrato",
+    cardiology: "Cardiología",
+    dermatology: "Dermatología",
+    traumatologySpec: "Traumatología",
+    pediatrics: "Pediatría",
+    generalClinic: "Clínica general",
+    ophthalmologySpec: "Oftalmología",
+    totalAppointments: "Turnos totales",
+    avgDelay: "Demora promedio",
+    onTimeRate: "% puntual",
+    pointsIssued: "Puntos emitidos",
+    delayByHour: "Demoras por hora",
+    delayByDay: "Demoras por día",
+    minutes: "min",
 
     // CommerceView
     scanQRTitle: "Escanear QR del paciente",
@@ -72,6 +104,16 @@ export const translations = {
     activeSubscription: "Suscripción activa",
     generateQR: "Generar QR",
     scanQR: "Escanear QR",
+    hours: "Horarios",
+    schedule: "Horario",
+    address: "Dirección",
+    todayRedemptions: "Canjes hoy",
+    discountsGiven: "Descuentos entregados",
+    newClients: "Clientes nuevos",
+    active: "Activo",
+    monFri: "Lun-Vie",
+    monSun: "Lun-Dom",
+    monSat: "Lun-Sáb",
 
     // Errors
     userNotFound: "Usuario no encontrado. Verificá los datos e intentá de nuevo.",
@@ -79,6 +121,7 @@ export const translations = {
     sessionExpired: "Tu sesión expiró. Por favor iniciá sesión nuevamente."
   },
   en: {
+    hello: "Hi",
     welcome: "Welcome to HORMI",
     subtitle: "Enter your details to access your panel.",
     tagline: "Your time has value. Now we prove it.",
@@ -92,8 +135,6 @@ export const translations = {
     darkMode: "Dark mode",
     lightMode: "Light mode",
     language: "Language",
-
-    // Common
     update: "Refresh",
     close: "Close",
 
@@ -108,6 +149,7 @@ export const translations = {
     pointsDelivered: "Points delivered",
     appointmentsRegistered: "Appointments registered",
     redemptionsMade: "Redemptions made",
+    delayMinutes: "min delay",
 
     // Benefits (HomeView)
     yourAvailablePoints: "Your available HORMI Points",
@@ -118,6 +160,25 @@ export const translations = {
     premiumMembership: "PREMIUM MEMBERSHIP",
     redeem: "Redeem",
     missingPoints: "Need",
+
+    // Cards
+    coffeeShop: "Coffee at partner café",
+    pharmacyDiscount: "Pharmacy discount",
+    psychology: "Psychology session",
+    internalConsult: "Free internal consultation",
+    dentistry: "Dentistry discount",
+    kinesiology: "Kinesiology session",
+    labAnalysis: "Lab analysis",
+    gym: "Gym membership",
+    aesthetics: "Aesthetics session",
+    yoga: "Yoga class",
+    nutritionist: "Nutritionist consultation",
+    ophthalmology: "Ophthalmology checkup",
+    traumatology: "Traumatology consultation",
+    vipBenefit: "Personalized VIP benefit",
+    dietetics: "Dietetics discount",
+    hairdresser: "Hairdresser discount",
+    partnerBusinesses: "Partner businesses",
 
     // QR Modal
     qrTitle: "Your redemption code",
@@ -138,6 +199,19 @@ export const translations = {
     analyticsTitle: "Clinic analytics",
     downloadPDF: "Download PDF report",
     contractStatus: "Contract status",
+    cardiology: "Cardiology",
+    dermatology: "Dermatology",
+    traumatologySpec: "Traumatology",
+    pediatrics: "Pediatrics",
+    generalClinic: "General clinic",
+    ophthalmologySpec: "Ophthalmology",
+    totalAppointments: "Total appointments",
+    avgDelay: "Avg delay",
+    onTimeRate: "On time rate",
+    pointsIssued: "Points issued",
+    delayByHour: "Delay by hour",
+    delayByDay: "Delay by day",
+    minutes: "min",
 
     // CommerceView
     scanQRTitle: "Scan patient QR",
@@ -149,6 +223,16 @@ export const translations = {
     activeSubscription: "Active subscription",
     generateQR: "Generate QR",
     scanQR: "Scan QR",
+    hours: "Hours",
+    schedule: "Schedule",
+    address: "Address",
+    todayRedemptions: "Today's redemptions",
+    discountsGiven: "Discounts given",
+    newClients: "New clients",
+    active: "Active",
+    monFri: "Mon-Fri",
+    monSun: "Mon-Sun",
+    monSat: "Mon-Sat",
 
     // Errors
     userNotFound: "User not found. Please check your details and try again.",

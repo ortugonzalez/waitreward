@@ -14,26 +14,15 @@ export const HormiLogo = ({ size = 'md' }) => {
     return () => observer.disconnect();
   }, []);
 
-  const logoBg = isDark 
-    ? 'linear-gradient(135deg, #5B52CC, #7F77DD)' 
-    : 'linear-gradient(135deg, #7F77DD, #9B8FE8)';
-    
-  const textBg = isDark
-    ? 'linear-gradient(135deg, #A89FEE, #C4BEFF)'
-    : 'linear-gradient(135deg, #7F77DD, #5B52CC)';
+  const textColor = isDark ? '#C4BEFF' : '#5B52CC';
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
       <div style={{
-        width: size === 'lg' ? 48 : 36,
-        height: size === 'lg' ? 48 : 36,
-        background: logoBg,
-        borderRadius: '12px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: size === 'lg' ? 24 : 18,
-        boxShadow: '0 4px 12px rgba(127,119,221,0.4)',
+        fontSize: size === 'lg' ? 36 : 24,
         flexShrink: 0
       }}>
         🐜
@@ -42,9 +31,7 @@ export const HormiLogo = ({ size = 'md' }) => {
         <div style={{
           fontWeight: 900,
           fontSize: size === 'lg' ? 28 : 20,
-          background: textBg,
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
+          color: textColor,
           letterSpacing: '-0.5px',
           lineHeight: 1
         }}>

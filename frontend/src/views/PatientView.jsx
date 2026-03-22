@@ -70,7 +70,8 @@ export function PatientView({ session, onLogout }) {
     <div className="flex flex-col gap-6 px-4 bg-[var(--bg-primary)] min-h-screen text-[var(--text-primary)] font-sans pb-8 max-w-full transition-colors">
 
       <div className="flex items-center justify-between pt-4">
-        <h1 className="text-2xl font-black text-[var(--text-primary)]">Hola, {session?.name?.split(' ')[0]} 👋</h1>
+        {/* FIX 5: No back arrow, solely Hello Message */}
+        <h1 className="text-2xl font-black text-[var(--text-primary)]">{t('hello')}, {session?.name?.split(' ')[0]} 👋</h1>
         <div className="flex items-center gap-3">
           <button
             onClick={fetchPoints}
@@ -129,8 +130,8 @@ export function PatientView({ session, onLogout }) {
 
       {/* Mi historial */}
       <div>
-        <h3 className="font-bold text-[var(--text-primary)] text-lg mb-1 px-1">{t('appointmentHistory')}</h3>
-        <p className="text-[13px] text-[var(--text-secondary)] mb-4 px-1">Turnos registrados en blockchain</p>
+        <h3 className="font-bold text-[var(--text-primary)] text-lg mb-4 px-1">{t('appointmentHistory')}</h3>
+        {/* FIX 2: Blockchain phrase removed completely */}
 
         {historyLoading ? (
           <div className="flex justify-center py-6">
@@ -155,30 +156,18 @@ export function PatientView({ session, onLogout }) {
               const dateStr = h.createdAt
                 ? new Date(h.createdAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })
                 : "—";
-              const snowtrace = h.txHash
-                ? `https://testnet.snowtrace.io/tx/${h.txHash}`
-                : null;
 
               return (
                 <div key={i} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-[16px] p-4 flex items-center gap-3 transition-colors">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[13px] font-black text-[var(--text-primary)]">{h.appointmentId}</span>
+                      {/* FIX 2: Standard Appointment name, severity, date without Hash */}
+                      <span className="text-[13px] font-black text-[var(--text-primary)]">TURNO-{h.appointmentId}</span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${severityColors[h.severity] || "bg-gray-100 text-[var(--text-secondary)]"}`}>
                         {severityLabels[h.severity] || h.severity}
                       </span>
                     </div>
-                    <p className="text-[11px] text-[var(--text-secondary)]">{dateStr} · {h.delayMinutes} min demora</p>
-                    {snowtrace && (
-                      <a
-                        href={snowtrace}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[10px] text-[#7F77DD] font-bold mt-1 inline-block hover:underline"
-                      >
-                        Ver en Snowtrace →
-                      </a>
-                    )}
+                    <p className="text-[11px] text-[var(--text-secondary)]">{dateStr} · {h.delayMinutes} {t('delayMinutes')}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <span className="text-[17px] font-black text-[#7F77DD]">+{h.pointsAwarded}</span>

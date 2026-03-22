@@ -10,40 +10,40 @@ const TIERS = [
     nameKey: "bronzeMembership",
     emoji: "🥉",
     items: [
-      { id: 1, emoji: "☕", name: "Café en local adherido", points: 30 },
-      { id: 2, emoji: "💊", name: "Descuento en farmacia", points: 100 },
-      { id: 3, emoji: "🥗", name: "Descuento en dietética", points: 80 },
-      { id: 4, emoji: "💈", name: "Descuento en peluquería", points: 60 },
+      { id: 1, emoji: "☕", nameKey: "coffeeShop", points: 30 },
+      { id: 2, emoji: "💊", nameKey: "pharmacyDiscount", points: 100 },
+      { id: 3, emoji: "🥗", nameKey: "dietetics", points: 80 },
+      { id: 4, emoji: "💈", nameKey: "hairdresser", points: 60 },
     ]
   },
   {
     nameKey: "silverMembership",
     emoji: "🥈",
     items: [
-      { id: 5, emoji: "🧠", name: "Sesión de psicología", points: 300 },
-      { id: 6, emoji: "🦷", name: "Descuento en odontología", points: 250 },
-      { id: 7, emoji: "💆", name: "Sesión de kinesiología", points: 250 },
-      { id: 8, emoji: "📋", name: "Análisis de laboratorio", points: 200 },
+      { id: 5, emoji: "🧠", nameKey: "psychology", points: 300 },
+      { id: 6, emoji: "🦷", nameKey: "dentistry", points: 250 },
+      { id: 7, emoji: "💆", nameKey: "kinesiology", points: 250 },
+      { id: 8, emoji: "📋", nameKey: "labAnalysis", points: 200 },
     ]
   },
   {
     nameKey: "goldMembership",
     emoji: "🥇",
     items: [
-      { id: 9, emoji: "🏋️", name: "Mes en gimnasio", points: 500 },
-      { id: 10, emoji: "🩺", name: "Consulta interna sin cargo", points: 500 },
-      { id: 11, emoji: "💅", name: "Sesión en estética", points: 400 },
-      { id: 12, emoji: "🧘", name: "Clase de yoga", points: 350 },
+      { id: 9, emoji: "🏋️", nameKey: "gym", points: 500 },
+      { id: 10, emoji: "🩺", nameKey: "internalConsult", points: 500 },
+      { id: 11, emoji: "💅", nameKey: "aesthetics", points: 400 },
+      { id: 12, emoji: "🧘", nameKey: "yoga", points: 350 },
     ]
   },
   {
     nameKey: "premiumMembership",
     emoji: "💎",
     items: [
-      { id: 13, emoji: "🌿", name: "Consulta con nutricionista", points: 600 },
-      { id: 14, emoji: "👁️", name: "Control oftalmológico", points: 600 },
-      { id: 15, emoji: "🦴", name: "Consulta traumatológica", points: 700 },
-      { id: 16, emoji: "⭐", name: "Beneficio VIP personalizado", points: 800 },
+      { id: 13, emoji: "🌿", nameKey: "nutritionist", points: 600 },
+      { id: 14, emoji: "👁️", nameKey: "ophthalmology", points: 600 },
+      { id: 15, emoji: "🦴", nameKey: "traumatology", points: 700 },
+      { id: 16, emoji: "⭐", nameKey: "vipBenefit", points: 800 },
     ]
   }
 ];
@@ -97,7 +97,7 @@ export function HomeView({ setActiveTab }) {
         expiresAt: data.expiresAt,
         discountValue: data.discountValue,
         points: item.points,
-        name: item.name,
+        name: t(item.nameKey) || item.nameKey, // Pass translated name
         emoji: item.emoji,
       });
     } catch (err) {
@@ -153,7 +153,7 @@ export function HomeView({ setActiveTab }) {
                       <span className="text-[40px] leading-none mb-2">{item.emoji}</span>
                       
                       <h3 className="text-[13px] font-bold text-[var(--text-primary)] leading-tight flex-1 flex items-center justify-center min-h-[40px] px-1 w-full">
-                        {item.name}
+                        {t(item.nameKey) || item.nameKey}
                       </h3>
                       
                       <div className="mt-2 w-full">
@@ -179,7 +179,7 @@ export function HomeView({ setActiveTab }) {
                       <span className="text-[40px] leading-none mb-2 opacity-40 grayscale">{item.emoji}</span>
                       
                       <h3 className="text-[13px] font-bold text-[var(--text-secondary)] leading-tight flex-1 flex items-center justify-center min-h-[40px] px-1 w-full">
-                        {item.name}
+                        {t(item.nameKey) || item.nameKey}
                       </h3>
                       
                       <div className="mt-2 w-full flex flex-col gap-2 items-center">
@@ -201,7 +201,7 @@ export function HomeView({ setActiveTab }) {
 
         {/* Comercios adheridos - Grid on Desktop */}
         <div className="mt-4 pt-8 border-t border-[var(--border)]">
-          <h2 className="font-bold text-[var(--text-primary)] text-lg mb-4 px-1 flex items-center gap-2"><span>🏪</span> Comercios adheridos</h2>
+          <h2 className="font-bold text-[var(--text-primary)] text-lg mb-4 px-1 flex items-center gap-2"><span>🏪</span> {t('partnerBusinesses')}</h2>
           
           <div
             className="flex lg:grid lg:grid-cols-4 overflow-x-auto pb-4 -mx-4 px-4 lg:mx-0 lg:px-0 gap-3 hide-scrollbar lg:overflow-visible"
@@ -262,7 +262,7 @@ function QRRewardModal({ data, onClose, t }) {
 
   const getConditions = (name) => {
     const n = name.toLowerCase();
-    if (n.includes("farmacia")) {
+    if (n.includes("farmacia") || n.includes("pharmacy")) {
       return (
         <ul className="list-disc pl-4 text-[11px] text-[var(--text-secondary)] flex flex-col gap-1 mt-1">
           <li>15% de descuento en medicamentos genéricos</li>
@@ -272,7 +272,7 @@ function QRRewardModal({ data, onClose, t }) {
         </ul>
       );
     }
-    if (n.includes("odontología")) {
+    if (n.includes("odontología") || n.includes("dentistry")) {
       return (
         <ul className="list-disc pl-4 text-[11px] text-[var(--text-secondary)] flex flex-col gap-1 mt-1">
           <li>20% de descuento en consulta y limpieza</li>
@@ -282,7 +282,7 @@ function QRRewardModal({ data, onClose, t }) {
         </ul>
       );
     }
-    if (n.includes("laboratorio")) {
+    if (n.includes("laboratorio") || n.includes("analysis")) {
       return (
         <ul className="list-disc pl-4 text-[11px] text-[var(--text-secondary)] flex flex-col gap-1 mt-1">
           <li>25% de descuento en análisis de rutina</li>
@@ -292,7 +292,7 @@ function QRRewardModal({ data, onClose, t }) {
         </ul>
       );
     }
-    if (n.includes("dietética")) {
+    if (n.includes("dietética") || n.includes("dietetics")) {
       return (
         <ul className="list-disc pl-4 text-[11px] text-[var(--text-secondary)] flex flex-col gap-1 mt-1">
           <li>10% de descuento en productos naturales</li>
@@ -301,7 +301,7 @@ function QRRewardModal({ data, onClose, t }) {
         </ul>
       );
     }
-    if (n.includes("descuento")) {
+    if (n.includes("descuento") || n.includes("discount")) {
       return (
         <ul className="list-disc pl-4 text-[11px] text-[var(--text-secondary)] flex flex-col gap-1 mt-1">
           <li>Descuento válido en productos seleccionados</li>

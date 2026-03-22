@@ -114,7 +114,10 @@ export function CommerceView({ session }) {
     hours: "Lun a Vie 09:00 - 20:00",
   };
 
-  const address = commerce?.address || "Av. Corrientes 1234, CABA"; 
+  // FIX 3: Prevent 0x addresses from displaying as physical locations
+  const address = (commerce?.address && !commerce.address.startsWith("0x"))
+    ? commerce.address 
+    : "Av. Corrientes 1234, Buenos Aires";
 
   const todayRedemptions = MOCK_REDEMPTIONS.filter(r => r.date === "Hoy");
 
@@ -133,7 +136,7 @@ export function CommerceView({ session }) {
                 {displayCommerce.name}
               </h1>
               <span className="shrink-0 inline-flex items-center gap-1.5 bg-[#22C55E]/10 text-[#22C55E] text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]"></span> {t('activeSubscription')}
+                <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]"></span> {t('active')}
               </span>
             </div>
             <p className="text-[13px] font-bold text-[#7F77DD] mt-1">{displayCommerce.category || "General"}</p>
@@ -147,7 +150,7 @@ export function CommerceView({ session }) {
           </div>
           <div className="flex items-center gap-2 text-[13px] text-[var(--text-secondary)]">
             <span className="text-lg">🕗</span> 
-            <span className="font-medium">{displayCommerce.hours || "Lunes a Viernes 09:00 a 20:00"}</span>
+            <span className="font-medium">{displayCommerce.hours || `${t('monFri')} 09:00 - 20:00`}</span>
           </div>
         </div>
       </div>
@@ -157,21 +160,21 @@ export function CommerceView({ session }) {
         <div className="bg-[var(--bg-secondary)] rounded-[16px] p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[var(--border)] flex items-center gap-4 transition-colors">
           <div className="w-10 h-10 rounded-full bg-[#7F77DD]/10 flex items-center justify-center text-[#7F77DD] text-xl">🔄</div>
           <div>
-            <p className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">Canjes hoy</p>
+            <p className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">{t('todayRedemptions')}</p>
             <p className="text-xl font-black text-[var(--text-primary)] leading-none mt-1">3</p>
           </div>
         </div>
         <div className="bg-[var(--bg-secondary)] rounded-[16px] p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[var(--border)] flex items-center gap-4 transition-colors">
           <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-500 text-xl">💸</div>
           <div>
-            <p className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">Descuentos</p>
+            <p className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">{t('discountsGiven')}</p>
             <p className="text-xl font-black text-[var(--text-primary)] leading-none mt-1">$2.00</p>
           </div>
         </div>
         <div className="bg-[var(--bg-secondary)] rounded-[16px] p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[var(--border)] flex items-center gap-4 transition-colors">
           <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 text-xl">👥</div>
           <div>
-            <p className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">{t('todayMetrics')}</p>
+            <p className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">{t('newClients')}</p>
             <p className="text-xl font-black text-[var(--text-primary)] leading-none mt-1">2</p>
           </div>
         </div>

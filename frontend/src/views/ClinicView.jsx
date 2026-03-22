@@ -7,13 +7,13 @@ import { useTranslation } from "../i18n";
 const HISTORY_KEY = "wr_clinic_history";
 const MAX_HISTORY = 5;
 
-const SPECIALISTS = [
-  { id: "cardiologia", label: "Cardiología", icon: "❤️" },
-  { id: "dermatologia", label: "Dermatología", icon: "🩺" },
-  { id: "traumatologia", label: "Traumatología", icon: "🦴" },
-  { id: "pediatria", label: "Pediatría", icon: "👶" },
-  { id: "clinica_general", label: "General", icon: "🏥" },
-  { id: "oftalmologia", label: "Oftalmología", icon: "👁️" },
+const getSpecialists = (t) => [
+  { id: "cardiologia", label: t('cardiology'), icon: "❤️" },
+  { id: "dermatologia", label: t('dermatology'), icon: "🩺" },
+  { id: "traumatologia", label: t('traumatologySpec'), icon: "🦴" },
+  { id: "pediatria", label: t('pediatrics'), icon: "👶" },
+  { id: "clinica_general", label: t('generalClinic'), icon: "🏥" },
+  { id: "oftalmologia", label: t('ophthalmologySpec'), icon: "👁️" },
 ];
 
 function loadHistory() {
@@ -32,6 +32,8 @@ function toLocalDateTimeValue(date = new Date()) {
 
 export function ClinicView({ session, onLogout }) {
   const { t } = useTranslation();
+  const SPECIALISTS = getSpecialists(t);
+
   const [form, setForm] = useState({
     appointmentId: "",
     patientDNI: "",
@@ -177,7 +179,7 @@ export function ClinicView({ session, onLogout }) {
     <div className="flex flex-col gap-6 px-4 bg-[var(--bg-primary)] min-h-screen text-[var(--text-primary)] font-sans pb-8 transition-colors">
       {/* Header */}
       <div className="flex items-center justify-between pt-4">
-        <h1 className="text-2xl font-black text-[var(--text-primary)]">Hola, {getDocName()} 👋</h1>
+        <h1 className="text-2xl font-black text-[var(--text-primary)]">{t('hello')}, {getDocName()} 👋</h1>
       </div>
 
       {/* IA Prediction */}
@@ -208,7 +210,7 @@ export function ClinicView({ session, onLogout }) {
         {predictionLoading && (
           <div className="flex flex-col items-center justify-center py-6 gap-3">
             <div className="w-8 h-8 border-4 border-[#7F77DD] border-t-transparent rounded-full animate-spin" />
-            <span className="text-[13px] font-bold text-[#7F77DD]">Cargando...</span>
+            <span className="text-[13px] font-bold text-[#7F77DD]">...</span>
           </div>
         )}
 
@@ -231,7 +233,7 @@ export function ClinicView({ session, onLogout }) {
                 <div>
                   <p className="text-[11px] font-bold text-[#7F77DD] uppercase tracking-widest">{t('estimatedWait')}</p>
                   <p className="text-[32px] font-black text-[var(--text-primary)] leading-none mt-1">
-                    {prediction.predicted_delay_minutes ?? prediction.predicted_delay ?? "—"} <span className="text-sm text-[var(--text-secondary)] font-bold">min</span>
+                    {prediction.predicted_delay_minutes ?? prediction.predicted_delay ?? "—"} <span className="text-sm text-[var(--text-secondary)] font-bold">{t('minutes')}</span>
                   </p>
                 </div>
               </div>
@@ -422,19 +424,19 @@ function AnalyticsPanel({ t }) {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-[var(--bg-primary)] rounded-[12px] p-3 border border-[#7F77DD]/10">
-          <p className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">Turnos mes</p>
+          <p className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">{t('totalAppointments')}</p>
           <p className="text-xl font-black text-[var(--text-primary)] mt-1">{data.metrics.turnos}</p>
         </div>
         <div className="bg-[var(--bg-primary)] rounded-[12px] p-3 border border-[#7F77DD]/10">
-          <p className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">Promedio</p>
-          <p className="text-xl font-black text-[var(--text-primary)] mt-1">{data.metrics.promedio} <span className="text-xs">min</span></p>
+          <p className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">{t('avgDelay')}</p>
+          <p className="text-xl font-black text-[var(--text-primary)] mt-1">{data.metrics.promedio} <span className="text-xs">{t('minutes')}</span></p>
         </div>
         <div className="bg-[#22C55E]/5 rounded-[12px] p-3 border border-[#22C55E]/20">
-          <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest">% Puntual</p>
+          <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest">{t('onTimeRate')}</p>
           <p className="text-xl font-black text-[#22C55E] mt-1">{data.metrics.puntual}%</p>
         </div>
         <div className="bg-[#7F77DD]/5 rounded-[12px] p-3 border border-[#7F77DD]/20">
-          <p className="text-[10px] font-bold text-[#7F77DD] uppercase tracking-widest">WP Emitidos</p>
+          <p className="text-[10px] font-bold text-[#7F77DD] uppercase tracking-widest">{t('pointsIssued')}</p>
           <p className="text-xl font-black text-[#7F77DD] mt-1">{data.metrics.wp.toLocaleString('es-AR')}</p>
         </div>
       </div>
@@ -480,14 +482,6 @@ function AnalyticsPanel({ t }) {
                 <span className="text-[var(--text-secondary)]">Red</span>
                 <span className="font-bold text-[var(--text-primary)]">{contractInfo.contract?.network} · #{contractInfo.contract?.blockNumber?.toLocaleString("es-AR")}</span>
               </div>
-              <a
-                href={contractInfo.contract?.snowtrace}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#7F77DD] font-bold text-[11px] mt-1 hover:underline"
-              >
-                Ver en Snowtrace →
-              </a>
             </>
           ) : (
             <p className="text-red-600 font-semibold">{contractInfo.error}</p>
