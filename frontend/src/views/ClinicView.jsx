@@ -73,7 +73,6 @@ export function ClinicView({ session, onLogout }) {
         setPatientName(null);
       }
     } catch (err) {
-      console.error(err);
       setPatientName(null);
     } finally {
       setResolvingDNI(false);
@@ -104,14 +103,14 @@ export function ClinicView({ session, onLogout }) {
           if (err.message?.includes("503") || err.message?.includes("no disponible") || err.message?.includes("Failed to fetch")) {
             setPredictionError("Módulo de IA no disponible en este momento.");
           } else {
-            setPredictionError(err.message || "Error al obtener predicción");
+            setPredictionError(err.message || t('connectionError'));
           }
           setPredictionLoading(false);
         }
       });
 
     return () => { cancelled = true; };
-  }, [selectedSpecialist]);
+  }, [selectedSpecialist, t]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -161,7 +160,7 @@ export function ClinicView({ session, onLogout }) {
     } catch (err) {
       let msg = err.message || "Error al registrar el turno";
       if (msg.includes("Failed to fetch")) {
-        msg = "⚠️ No se puede conectar al servidor.";
+        msg = "⚠️ " + t('connectionError');
       }
       toast.error(msg);
     } finally {
@@ -175,29 +174,20 @@ export function ClinicView({ session, onLogout }) {
   };
 
   return (
-    <div className="flex flex-col gap-6 px-4 bg-[#F8F7FF] min-h-screen text-[#1A1A2E] font-sans pb-8">
+    <div className="flex flex-col gap-6 px-4 bg-[var(--bg-primary)] min-h-screen text-[var(--text-primary)] font-sans pb-8 transition-colors">
       {/* Header */}
       <div className="flex items-center justify-between pt-4">
-        <h1 className="text-2xl font-black text-[#1A1A2E]">Hola, {getDocName()} 👋</h1>
-        <button
-          onClick={onLogout}
-          className="text-xs font-bold text-gray-400 hover:text-red-400 transition-colors"
-        >
-          Cerrar sesión
-        </button>
+        <h1 className="text-2xl font-black text-[var(--text-primary)]">Hola, {getDocName()} 👋</h1>
       </div>
 
       {/* IA Prediction */}
-      <div className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 flex flex-col gap-4">
+      <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 flex flex-col gap-4 transition-colors">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl">🤖</span>
-            <h2 className="font-bold text-[#1A1A2E] text-base">{t('prediction.title')}</h2>
+            <h2 className="font-bold text-[var(--text-primary)] text-base">{t('delayPrediction')}</h2>
           </div>
         </div>
-        <p className="text-[13px] text-gray-500 leading-tight">
-          {t('prediction.description')}
-        </p>
 
         <div className="grid grid-cols-3 gap-2 mt-1">
           {SPECIALISTS.map((s) => (
@@ -206,7 +196,7 @@ export function ClinicView({ session, onLogout }) {
               onClick={() => setSelectedSpecialist(prev => prev === s.id ? "" : s.id)}
               className={`flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-[12px] text-[11px] font-bold transition-all active:scale-95 border ${selectedSpecialist === s.id
                   ? "bg-[#7F77DD] text-white border-[#7F77DD] shadow-[0_4px_12px_rgba(127,119,221,0.3)]"
-                  : "bg-white text-gray-600 border-gray-100 hover:border-[#7F77DD]/30"
+                  : "bg-[var(--bg-primary)] text-[var(--text-primary)] border-[var(--border)] hover:border-[#7F77DD]/30"
                 }`}
             >
               <span className="text-2xl">{s.icon}</span>
@@ -218,7 +208,7 @@ export function ClinicView({ session, onLogout }) {
         {predictionLoading && (
           <div className="flex flex-col items-center justify-center py-6 gap-3">
             <div className="w-8 h-8 border-4 border-[#7F77DD] border-t-transparent rounded-full animate-spin" />
-            <span className="text-[13px] font-bold text-[#7F77DD]">{t('prediction.loading')}</span>
+            <span className="text-[13px] font-bold text-[#7F77DD]">Cargando...</span>
           </div>
         )}
 
@@ -231,24 +221,24 @@ export function ClinicView({ session, onLogout }) {
 
         {prediction && !predictionLoading && (
           <div className="bg-gradient-to-br from-[#7F77DD]/5 to-[#9B8FE8]/15 rounded-[16px] p-5 flex flex-col gap-4 border border-[#7F77DD]/10 mt-2 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/40 blur-3xl rounded-full -translate-y-1/2 translate-x-1/3" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/3" />
 
             <div className="flex items-center justify-between relative z-10">
               <div className="flex items-center gap-3">
-                <div className="bg-white p-2 rounded-[12px] shadow-sm">
+                <div className="bg-[var(--bg-secondary)] border border-[var(--border)] p-2 rounded-[12px] shadow-sm">
                   <span className="text-2xl block">⏱️</span>
                 </div>
                 <div>
-                  <p className="text-[11px] font-bold text-[#7F77DD] uppercase tracking-widest">{t('prediction.estimatedDelay')}</p>
-                  <p className="text-[32px] font-black text-[#1A1A2E] leading-none mt-1">
-                    {prediction.predicted_delay_minutes ?? prediction.predicted_delay ?? "—"} <span className="text-sm text-gray-500 font-bold">{t('prediction.minutes')}</span>
+                  <p className="text-[11px] font-bold text-[#7F77DD] uppercase tracking-widest">{t('estimatedWait')}</p>
+                  <p className="text-[32px] font-black text-[var(--text-primary)] leading-none mt-1">
+                    {prediction.predicted_delay_minutes ?? prediction.predicted_delay ?? "—"} <span className="text-sm text-[var(--text-secondary)] font-bold">min</span>
                   </p>
                 </div>
               </div>
 
               <div className="text-right">
-                <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">{t('prediction.patientsAhead')}</p>
-                <div className="flex items-center justify-end gap-1 mt-1 text-[#1A1A2E] font-black text-xl">
+                <p className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">{t('patientsAhead')}</p>
+                <div className="flex items-center justify-end gap-1 mt-1 text-[var(--text-primary)] font-black text-xl">
                   <span>👥</span> {prediction.patients_ahead ?? "—"}
                 </div>
               </div>
@@ -256,10 +246,10 @@ export function ClinicView({ session, onLogout }) {
 
             <div className="flex flex-col gap-1.5 relative z-10">
               <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
-                <span className="text-[#22C55E]">{t('prediction.modelConfidence')}</span>
-                <span className="text-gray-500">{Math.round((prediction.confidence ?? 0) * 100)}%</span>
+                <span className="text-[#22C55E]">{t('confidence')}</span>
+                <span className="text-[var(--text-secondary)]">{Math.round((prediction.confidence ?? 0) * 100)}%</span>
               </div>
-              <div className="w-full h-2.5 bg-white/60 rounded-full overflow-hidden shadow-inner">
+              <div className="w-full h-2.5 bg-black/10 rounded-full overflow-hidden shadow-inner">
                 <div
                   className="h-full bg-gradient-to-r from-[#22C55E] to-[#4ADE80] rounded-full transition-all duration-1000 ease-out"
                   style={{ width: `${(prediction.confidence ?? 0) * 100}%` }}
@@ -271,16 +261,16 @@ export function ClinicView({ session, onLogout }) {
       </div>
 
       {/* Analytics Panel */}
-      <AnalyticsPanel />
+      <AnalyticsPanel t={t} />
 
       {/* Formulario */}
-      <form onSubmit={handleSubmit} className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 flex flex-col gap-4 transition-colors">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-xl">📝</span>
-          <h2 className="font-bold text-[#1A1A2E] text-base">{t('registerAttention')}</h2>
+          <h2 className="font-bold text-[var(--text-primary)] text-base">{t('registerAttention')}</h2>
         </div>
 
-        <Field label={t('form.appointmentNumber')} htmlFor="appointmentId">
+        <Field label={t('appointmentNumber')} htmlFor="appointmentId">
           <input
             id="appointmentId"
             name="appointmentId"
@@ -288,11 +278,11 @@ export function ClinicView({ session, onLogout }) {
             placeholder="Ej: A-15"
             value={form.appointmentId}
             onChange={handleChange}
-            className={inputCls}
+            className="w-full bg-[var(--bg-primary)] border border-[var(--input-border)] text-[var(--text-primary)] rounded-[12px] px-4 py-3 text-[14px] font-medium focus:outline-none focus:border-[#7F77DD] focus:ring-1 focus:ring-[#7F77DD] transition-all"
           />
         </Field>
 
-        <Field label={t('form.patientDNI')} htmlFor="patientDNI">
+        <Field label={t('patientId')} htmlFor="patientDNI">
           <div className="relative">
             <input
               id="patientDNI"
@@ -302,7 +292,7 @@ export function ClinicView({ session, onLogout }) {
               value={form.patientDNI}
               onChange={handleChange}
               onBlur={handleDNIBlur}
-              className={inputCls}
+              className="w-full bg-[var(--bg-primary)] border border-[var(--input-border)] text-[var(--text-primary)] rounded-[12px] px-4 py-3 text-[14px] font-medium focus:outline-none focus:border-[#7F77DD] focus:ring-1 focus:ring-[#7F77DD] transition-all"
             />
             {resolvingDNI && (
               <div className="absolute right-3 top-3 w-4 h-4 border-2 border-[#7F77DD] border-t-transparent rounded-full animate-spin" />
@@ -317,30 +307,30 @@ export function ClinicView({ session, onLogout }) {
         </Field>
 
         <div className="flex gap-3">
-          <Field label={t('form.scheduled')} htmlFor="scheduledDatetime" className="flex-1">
+          <Field label={t('scheduledTime')} htmlFor="scheduledDatetime" className="flex-1">
             <input
               id="scheduledDatetime"
               name="scheduledDatetime"
-              type="time" // Simplified for demo
+              type="time"
               value={form.scheduledDatetime.split('T')[1]?.substring(0, 5) || "09:00"}
               onChange={(e) => {
                 const datePart = form.scheduledDatetime.split('T')[0];
                 setForm(f => ({ ...f, scheduledDatetime: `${datePart}T${e.target.value}` }));
               }}
-              className={inputCls}
+              className="w-full bg-[var(--bg-primary)] border border-[var(--input-border)] text-[var(--text-primary)] rounded-[12px] px-4 py-3 text-[14px] font-medium focus:outline-none focus:border-[#7F77DD] focus:ring-1 focus:ring-[#7F77DD] transition-all"
             />
           </Field>
-          <Field label={t('form.actual')} htmlFor="actualDatetime" className="flex-1">
+          <Field label={t('actualTime')} htmlFor="actualDatetime" className="flex-1">
             <input
               id="actualDatetime"
               name="actualDatetime"
-              type="time" // Simplified for demo
+              type="time" 
               value={form.actualDatetime.split('T')[1]?.substring(0, 5) || "09:15"}
               onChange={(e) => {
                 const datePart = form.actualDatetime.split('T')[0];
                 setForm(f => ({ ...f, actualDatetime: `${datePart}T${e.target.value}` }));
               }}
-              className={inputCls}
+              className="w-full bg-[var(--bg-primary)] border border-[var(--input-border)] text-[var(--text-primary)] rounded-[12px] px-4 py-3 text-[14px] font-medium focus:outline-none focus:border-[#7F77DD] focus:ring-1 focus:ring-[#7F77DD] transition-all"
             />
           </Field>
         </div>
@@ -353,7 +343,7 @@ export function ClinicView({ session, onLogout }) {
           {loading ? (
             <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : (
-            t('form.registerAndAwardPoints')
+            t('register')
           )}
         </button>
       </form>
@@ -363,8 +353,8 @@ export function ClinicView({ session, onLogout }) {
         <div className="bg-[#22C55E]/10 border border-[#22C55E]/20 rounded-[16px] p-5 flex flex-col items-center gap-2 text-center animate-fade-in">
           <span className="text-4xl mb-1">🎉</span>
           <h3 className="font-black text-[#22C55E] text-lg">Turno registrado</h3>
-          <p className="text-[13px] font-medium text-[#1A1A2E]">
-            {result.patientName} sumó <span className="font-black text-[#7F77DD]">{parseFloat(result.pointsAwarded)} Puntos HORMI</span>.
+          <p className="text-[13px] font-medium text-[var(--text-primary)]">
+            {result.patientName} sumó <span className="font-black text-[#7F77DD]">{parseFloat(result.pointsAwarded)} {t('points')}</span>.
           </p>
         </div>
       )}
@@ -372,13 +362,12 @@ export function ClinicView({ session, onLogout }) {
       {/* Historial */}
       {history.length > 0 && (
         <div className="bg-transparent mb-4">
-          <h3 className="font-bold text-gray-500 text-[13px] uppercase tracking-widest mb-3 px-1">Últimos registros</h3>
           <ul className="flex flex-col gap-2">
             {history.map((h, i) => (
-              <li key={i} className="bg-white rounded-[12px] p-3 flex items-center justify-between shadow-sm border border-gray-100">
+              <li key={i} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-[12px] p-3 flex items-center justify-between shadow-sm transition-colors">
                 <div className="flex flex-col">
-                  <span className="text-[14px] font-black text-[#1A1A2E]">Turno {h.id}</span>
-                  <span className="text-[11px] font-bold text-gray-400">{h.time}</span>
+                  <span className="text-[14px] font-black text-[var(--text-primary)]">Turno {h.id}</span>
+                  <span className="text-[11px] font-bold text-[var(--text-secondary)]">{h.time}</span>
                 </div>
                 <PointsBadge points={h.points} delayMinutes={h.delayMinutes} />
               </li>
@@ -390,8 +379,7 @@ export function ClinicView({ session, onLogout }) {
   );
 }
 
-// ── Analytics Component ───────────────────────────────────────────────────────
-function AnalyticsPanel() {
+function AnalyticsPanel({ t }) {
   const [data, setData] = useState({
     metrics: { turnos: 847, promedio: 28, puntual: 23, wp: 42350 },
     hourly: [10, 20, 45, 30, 15, 5, 25, 40],
@@ -417,7 +405,7 @@ function AnalyticsPanel() {
       const info = await verifyContract();
       setContractInfo(info);
     } catch {
-      setContractInfo({ success: false, error: "No se puede conectar a Avalanche Fuji" });
+      setContractInfo({ success: false, error: "Conexión a testnet rechazada." });
     } finally {
       setContractLoading(false);
     }
@@ -426,21 +414,20 @@ function AnalyticsPanel() {
   const maxVal = Math.max(...data.hourly);
 
   return (
-    <div className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 flex flex-col gap-5">
+    <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 flex flex-col gap-5 transition-colors">
       <div className="flex items-center gap-2">
         <span className="text-xl">📊</span>
-        <h2 className="font-bold text-[#1A1A2E] text-base">Analytics de la clínica</h2>
+        <h2 className="font-bold text-[var(--text-primary)] text-base">{t('analyticsTitle')}</h2>
       </div>
 
-      {/* 4 Metrics Grid */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-[#F8F7FF] rounded-[12px] p-3 border border-[#7F77DD]/10">
-          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Turnos mes</p>
-          <p className="text-xl font-black text-[#1A1A2E] mt-1">{data.metrics.turnos}</p>
+        <div className="bg-[var(--bg-primary)] rounded-[12px] p-3 border border-[#7F77DD]/10">
+          <p className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">Turnos mes</p>
+          <p className="text-xl font-black text-[var(--text-primary)] mt-1">{data.metrics.turnos}</p>
         </div>
-        <div className="bg-[#F8F7FF] rounded-[12px] p-3 border border-[#7F77DD]/10">
-          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Promedio</p>
-          <p className="text-xl font-black text-[#1A1A2E] mt-1">{data.metrics.promedio} <span className="text-xs">min</span></p>
+        <div className="bg-[var(--bg-primary)] rounded-[12px] p-3 border border-[#7F77DD]/10">
+          <p className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">Promedio</p>
+          <p className="text-xl font-black text-[var(--text-primary)] mt-1">{data.metrics.promedio} <span className="text-xs">min</span></p>
         </div>
         <div className="bg-[#22C55E]/5 rounded-[12px] p-3 border border-[#22C55E]/20">
           <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest">% Puntual</p>
@@ -452,45 +439,24 @@ function AnalyticsPanel() {
         </div>
       </div>
 
-      {/* Simple Bar Chart */}
-      <div>
-        <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-3">Demora por hora (hoy)</p>
-        <div className="flex items-end justify-between h-24 gap-1 px-1">
-          {data.hourly.map((val, i) => (
-            <div key={i} className="flex flex-col items-center justify-end w-full gap-1 group relative">
-              <div
-                className="w-full bg-[#7F77DD] rounded-t-sm transition-all duration-500 hover:bg-[#9B8FE8]"
-                style={{ height: `${Math.max(10, (val / maxVal) * 100)}%` }}
-              />
-              <span className="text-[9px] font-bold text-gray-400">{i + 9}h</span>
-              <div className="absolute -top-6 bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
-                {val}m
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Acciones */}
       <div className="flex gap-2 mt-1">
         <button
           onClick={downloadReport}
           className="flex-1 py-2.5 rounded-[12px] bg-[#7F77DD] text-white font-bold text-xs active:scale-[0.98] transition-transform flex items-center justify-center gap-1.5 shadow-[0_2px_8px_rgba(127,119,221,0.3)]"
         >
-          📄 Descargar reporte PDF
+          📄 {t('downloadPDF')}
         </button>
         <button
           onClick={handleVerifyContract}
           disabled={contractLoading}
-          className="flex-1 py-2.5 rounded-[12px] bg-[#F8F7FF] border border-[#7F77DD]/20 text-[#7F77DD] font-bold text-xs active:scale-[0.98] transition-transform disabled:opacity-60 flex items-center justify-center gap-1.5"
+          className="flex-1 py-2.5 rounded-[12px] bg-[var(--bg-primary)] border border-[#7F77DD]/20 text-[#7F77DD] font-bold text-xs active:scale-[0.98] transition-transform disabled:opacity-60 flex items-center justify-center gap-1.5"
         >
           {contractLoading ? (
             <span className="w-3 h-3 border-2 border-[#7F77DD] border-t-transparent rounded-full animate-spin" />
-          ) : "⬡ Estado contrato"}
+          ) : "⬡ " + t('contractStatus')}
         </button>
       </div>
 
-      {/* Contract info card */}
       {contractInfo && (
         <div className={`rounded-[12px] p-4 flex flex-col gap-2 border text-[12px] ${
           contractInfo.success
@@ -503,16 +469,16 @@ function AnalyticsPanel() {
                 <span className="text-[#22C55E] font-black text-sm">✅ Contrato activo</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Token</span>
-                <span className="font-bold text-[#1A1A2E]">{contractInfo.contract?.name} ({contractInfo.contract?.symbol})</span>
+                <span className="text-[var(--text-secondary)]">Token</span>
+                <span className="font-bold text-[var(--text-primary)]">{contractInfo.contract?.name} ({contractInfo.contract?.symbol})</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Total supply</span>
+                <span className="text-[var(--text-secondary)]">Total supply</span>
                 <span className="font-bold text-[#7F77DD]">{contractInfo.contract?.totalSupplyFormatted} HRM</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Red</span>
-                <span className="font-bold text-[#1A1A2E]">{contractInfo.contract?.network} · #{contractInfo.contract?.blockNumber?.toLocaleString("es-AR")}</span>
+                <span className="text-[var(--text-secondary)]">Red</span>
+                <span className="font-bold text-[var(--text-primary)]">{contractInfo.contract?.network} · #{contractInfo.contract?.blockNumber?.toLocaleString("es-AR")}</span>
               </div>
               <a
                 href={contractInfo.contract?.snowtrace}
@@ -532,16 +498,10 @@ function AnalyticsPanel() {
   );
 }
 
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-const inputCls =
-  "w-full bg-[#F8F7FF] border border-gray-200 rounded-[12px] px-4 py-3 text-[#1A1A2E] text-[14px] font-medium focus:outline-none focus:border-[#7F77DD] focus:ring-1 focus:ring-[#7F77DD] transition-all";
-
 function Field({ label, htmlFor, children, className = "" }) {
   return (
     <div className={className}>
-      <label htmlFor={htmlFor} className="text-[11px] text-gray-500 font-bold uppercase tracking-widest mb-1.5 block px-1">
+      <label htmlFor={htmlFor} className="text-[11px] text-[var(--text-secondary)] font-bold uppercase tracking-widest mb-1.5 block px-1">
         {label}
       </label>
       {children}

@@ -10,17 +10,27 @@
   :root {
     --bg-primary: #F8F7FF;
     --bg-secondary: #FFFFFF;
+    --bg-sidebar: #7F77DD;
     --text-primary: #1A1A2E;
     --text-secondary: #666666;
+    --text-on-sidebar: #FFFFFF;
     --border: #E5E7EB;
+    --card-bg: #FFFFFF;
+    --input-bg: #FFFFFF;
+    --input-border: #E5E7EB;
   }
 
   [data-theme="dark"] {
     --bg-primary: #0F0F1A;
     --bg-secondary: #1A1A2E;
+    --bg-sidebar: #1A1A2E;
     --text-primary: #F0F0FF;
     --text-secondary: #A0A0BB;
+    --text-on-sidebar: #F0F0FF;
     --border: #2A2A3E;
+    --card-bg: #1E1E30;
+    --input-bg: #1E1E30;
+    --input-border: #3A3A5E;
   }
 
   body {

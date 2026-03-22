@@ -14,7 +14,6 @@ export function PatientView({ session, onLogout }) {
   const [queue, setQueue] = useState(null);
   const [queueLoading, setQueueLoading] = useState(false);
 
-  // ── History state ──────────────────────────────────────────────────────────
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
@@ -68,16 +67,16 @@ export function PatientView({ session, onLogout }) {
   }, [fetchPoints, fetchQueue, fetchHistory]);
 
   return (
-    <div className="flex flex-col gap-6 px-4 bg-[#F8F7FF] min-h-screen text-[#1A1A2E] font-sans pb-8 max-w-full">
+    <div className="flex flex-col gap-6 px-4 bg-[var(--bg-primary)] min-h-screen text-[var(--text-primary)] font-sans pb-8 max-w-full transition-colors">
 
       <div className="flex items-center justify-between pt-4">
-        <h1 className="text-2xl font-black text-[#1A1A2E]">Hola, {session?.name?.split(' ')[0]} 👋</h1>
+        <h1 className="text-2xl font-black text-[var(--text-primary)]">Hola, {session?.name?.split(' ')[0]} 👋</h1>
         <div className="flex items-center gap-3">
           <button
             onClick={fetchPoints}
             disabled={loadingPts}
-            className="w-8 h-8 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] flex items-center justify-center text-[#7F77DD] active:scale-95 transition-transform disabled:opacity-40"
-            title="Actualizar"
+            className="w-8 h-8 rounded-full bg-[var(--bg-secondary)] border border-[var(--border)] shadow-[0_2px_8px_rgba(0,0,0,0.08)] flex items-center justify-center text-[#7F77DD] active:scale-95 transition-transform disabled:opacity-40"
+            title={t('update')}
           >
             <span className={`text-base font-bold ${loadingPts ? "animate-spin" : ""}`}>↻</span>
           </button>
@@ -85,7 +84,7 @@ export function PatientView({ session, onLogout }) {
       </div>
 
       {/* Cola en tiempo real */}
-      <div className="bg-[#F8F7FF] border-l-4 border-[#7F77DD] rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 flex flex-col gap-4 relative overflow-hidden bg-white">
+      <div className="bg-[var(--bg-secondary)] border-l-4 border-[#7F77DD] rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 flex flex-col gap-4 relative overflow-hidden transition-colors">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl">🏥</span>
@@ -96,7 +95,7 @@ export function PatientView({ session, onLogout }) {
             disabled={queueLoading}
             className="text-xs bg-[#7F77DD]/10 text-[#7F77DD] font-bold px-3 py-1.5 rounded-[8px] active:scale-95 transition-transform"
           >
-            {queueLoading ? "Actualizando..." : t('update')}
+            {queueLoading ? "..." : t('update')}
           </button>
         </div>
 
@@ -124,20 +123,13 @@ export function PatientView({ session, onLogout }) {
                 </div>
               </div>
             </div>
-            {queue.last_updated && (
-              <div className="mt-1">
-                <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-[6px] uppercase tracking-wide">
-                  Actualizado {queue.last_updated}
-                </span>
-              </div>
-            )}
           </div>
         ) : null}
       </div>
 
       {/* Mi historial */}
       <div>
-        <h3 className="font-bold text-[var(--text-primary)] text-lg mb-1 px-1">Mi historial</h3>
+        <h3 className="font-bold text-[var(--text-primary)] text-lg mb-1 px-1">{t('appointmentHistory')}</h3>
         <p className="text-[13px] text-[var(--text-secondary)] mb-4 px-1">Turnos registrados en blockchain</p>
 
         {historyLoading ? (
@@ -145,8 +137,8 @@ export function PatientView({ session, onLogout }) {
             <div className="w-6 h-6 border-2 border-[#7F77DD] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : history.length === 0 ? (
-          <div className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 text-center">
-            <p className="text-sm text-gray-400">Sin turnos registrados aún</p>
+          <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-[16px] p-5 text-center transition-colors">
+            <p className="text-sm text-[var(--text-secondary)]">Sin turnos registrados aún</p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
@@ -168,15 +160,15 @@ export function PatientView({ session, onLogout }) {
                 : null;
 
               return (
-                <div key={i} className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-4 flex items-center gap-3">
+                <div key={i} className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-[16px] p-4 flex items-center gap-3 transition-colors">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[13px] font-black text-[#1A1A2E]">{h.appointmentId}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${severityColors[h.severity] || "bg-gray-100 text-gray-500"}`}>
+                      <span className="text-[13px] font-black text-[var(--text-primary)]">{h.appointmentId}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${severityColors[h.severity] || "bg-gray-100 text-[var(--text-secondary)]"}`}>
                         {severityLabels[h.severity] || h.severity}
                       </span>
                     </div>
-                    <p className="text-[11px] text-gray-400">{dateStr} · {h.delayMinutes} min demora</p>
+                    <p className="text-[11px] text-[var(--text-secondary)]">{dateStr} · {h.delayMinutes} min demora</p>
                     {snowtrace && (
                       <a
                         href={snowtrace}
@@ -190,7 +182,7 @@ export function PatientView({ session, onLogout }) {
                   </div>
                   <div className="text-right flex-shrink-0">
                     <span className="text-[17px] font-black text-[#7F77DD]">+{h.pointsAwarded}</span>
-                    <p className="text-[10px] text-gray-400 font-bold">WP</p>
+                    <p className="text-[10px] text-[var(--text-secondary)] font-bold">WP</p>
                   </div>
                 </div>
               );
@@ -200,29 +192,29 @@ export function PatientView({ session, onLogout }) {
       </div>
 
       {/* Nuestro Impacto */}
-      <div className="mt-6 pt-6 border-t border-gray-200 animate-fade-in">
-        <h3 className="font-black text-gray-400 text-[11px] uppercase tracking-widest mb-4 px-2 text-center">Nuestro Impacto Global</h3>
+      <div className="mt-6 pt-6 border-t border-[var(--border)] animate-fade-in">
+        <h3 className="font-black text-[var(--text-secondary)] text-[11px] uppercase tracking-widest mb-4 px-2 text-center">{t('ourImpact')}</h3>
         
         <div className="grid grid-cols-2 gap-3 text-center opacity-80 pointer-events-none">
-          <div className="bg-white rounded-[16px] p-4 flex flex-col items-center shadow-sm border border-gray-100">
+          <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-[16px] p-4 flex flex-col items-center shadow-sm transition-colors">
             <span className="text-2xl mb-1">💸</span>
             <p className="font-black text-[#7F77DD] text-lg">42.350</p>
-            <p className="text-[10px] text-[#1A1A2E] font-bold uppercase tracking-widest mt-1">WP entregados</p>
+            <p className="text-[10px] text-[var(--text-primary)] font-bold uppercase tracking-widest mt-1">{t('pointsDelivered')}</p>
           </div>
           
-          <div className="bg-white rounded-[16px] p-4 flex flex-col items-center shadow-sm border border-gray-100">
+          <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-[16px] p-4 flex flex-col items-center shadow-sm transition-colors">
             <span className="text-2xl mb-1">🏥</span>
             <p className="font-black text-[#7F77DD] text-lg">847</p>
-            <p className="text-[10px] text-[#1A1A2E] font-bold uppercase tracking-widest mt-1">Turnos</p>
+            <p className="text-[10px] text-[var(--text-primary)] font-bold uppercase tracking-widest mt-1">{t('appointmentsRegistered')}</p>
           </div>
           
-          <div className="bg-white rounded-[16px] p-4 flex flex-col items-center shadow-sm border border-gray-100 col-span-2">
+          <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-[16px] p-4 flex flex-col items-center shadow-sm col-span-2 transition-colors">
             <div className="flex flex-col items-center">
               <span className="text-3xl mb-1">💊</span>
               <div className="flex items-baseline gap-1">
                 <p className="font-black text-[#7F77DD] text-2xl">156</p>
               </div>
-              <p className="text-[11px] text-[#1A1A2E] font-bold uppercase tracking-widest mt-1">Canjes realizados</p>
+              <p className="text-[11px] text-[var(--text-primary)] font-bold uppercase tracking-widest mt-1">{t('redemptionsMade')}</p>
             </div>
           </div>
         </div>

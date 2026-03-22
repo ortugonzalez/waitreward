@@ -12,12 +12,12 @@ export function SidebarNav({ activeTab, setActiveTab, session, mobileDrawer = fa
     // Classes adapt based on whether they are in Desktop sidebar (dark/white theme) or Mobile drawer (white/gray theme)
     const baseLinkClass = "flex items-center gap-3 px-4 py-3 rounded-[12px] font-bold text-[14px] transition-all";
     const inactiveClass = mobileDrawer 
-        ? "text-[#1A1A2E] hover:bg-gray-50" 
-        : "text-white/80 hover:text-white hover:bg-white/10";
+        ? "text-[var(--text-primary)] hover:bg-[var(--bg-primary)]" 
+        : "text-[var(--text-on-sidebar)] opacity-80 hover:opacity-100 hover:bg-black/10";
     
     const activeClass = mobileDrawer
-        ? "bg-[#7F77DD]/10 text-[#7F77DD]"
-        : "bg-white/20 text-white shadow-sm";
+        ? "bg-[#7F77DD]/10 text-[#7F77DD] border border-[#7F77DD]/20"
+        : "bg-black/20 text-[var(--text-on-sidebar)] shadow-sm font-black";
 
     return (
         <>
