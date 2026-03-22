@@ -118,7 +118,40 @@ export const translations = {
     // Errors
     userNotFound: "Usuario no encontrado. Verificá los datos e intentá de nuevo.",
     connectionError: "No pudimos conectarnos al servidor. Verificá tu conexión.",
-    sessionExpired: "Tu sesión expiró. Por favor iniciá sesión nuevamente."
+    sessionExpired: "Tu sesión expiró. Por favor iniciá sesión nuevamente.",
+
+    // Condiciones farmacia
+    condPharmacy1: "15% de descuento en medicamentos genéricos",
+    condPharmacy2: "Tope máximo: $2.000 por canje",
+    condPharmacy3: "Válido en productos seleccionados",
+    condPharmacy4: "No acumulable con otras promociones",
+
+    // Condiciones odontología
+    condDentistry1: "20% de descuento en consulta y limpieza",
+    condDentistry2: "Tope máximo: $5.000 por canje",
+    condDentistry3: "Primer turno únicamente",
+    condDentistry4: "Presentar QR al momento del turno",
+
+    // Condiciones laboratorio
+    condLab1: "25% de descuento en análisis de rutina",
+    condLab2: "Incluye: hemograma, glucemia, colesterol",
+    condLab3: "No incluye estudios de alta complejidad",
+    condLab4: "Válido de lunes a viernes",
+
+    // Condiciones dietética
+    condDiet1: "10% de descuento en productos naturales",
+    condDiet2: "Tope máximo: $1.500 por canje",
+    condDiet3: "No incluye suplementos importados",
+
+    // Condiciones genéricas
+    condGeneric1: "Descuento válido en productos seleccionados",
+    condGeneric2: "Consultar condiciones en el local",
+    condGeneric3: "No acumulable con otras promociones",
+    condGeneric4: "Presentar QR al momento del canje",
+
+    // Labels de condiciones
+    conditionsTitle: "📋 Condiciones",
+    expiresIn: "Válido por 60 días"
   },
   en: {
     hello: "Hi",
@@ -237,7 +270,40 @@ export const translations = {
     // Errors
     userNotFound: "User not found. Please check your details and try again.",
     connectionError: "Could not connect to server. Check your connection.",
-    sessionExpired: "Your session expired. Please sign in again."
+    sessionExpired: "Your session expired. Please sign in again.",
+
+    // Condiciones farmacia
+    condPharmacy1: "15% discount on generic medications",
+    condPharmacy2: "Maximum cap: $2,000 per redemption",
+    condPharmacy3: "Valid on selected products",
+    condPharmacy4: "Not combinable with other promotions",
+
+    // Condiciones odontología
+    condDentistry1: "20% discount on consultation and cleaning",
+    condDentistry2: "Maximum cap: $5,000 per redemption",
+    condDentistry3: "First appointment only",
+    condDentistry4: "Show QR at the time of appointment",
+
+    // Condiciones laboratorio
+    condLab1: "25% discount on routine lab tests",
+    condLab2: "Includes: blood count, glucose, cholesterol",
+    condLab3: "Does not include complex studies",
+    condLab4: "Valid Monday to Friday",
+
+    // Condiciones dietética
+    condDiet1: "10% discount on natural products",
+    condDiet2: "Maximum cap: $1,500 per redemption",
+    condDiet3: "Does not include imported supplements",
+
+    // Condiciones genéricas
+    condGeneric1: "Discount valid on selected products",
+    condGeneric2: "Check conditions at the store",
+    condGeneric3: "Not combinable with other promotions",
+    condGeneric4: "Show QR at the time of redemption",
+
+    // Labels de condiciones
+    conditionsTitle: "📋 Conditions",
+    expiresIn: "Valid for 60 days"
   }
 };
 

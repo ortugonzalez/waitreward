@@ -64,5 +64,7 @@ export const verifyContract = () =>
   request("/api/contract/verify");
 
 // Descargar reporte PDF
-export const downloadReport = () =>
-  window.open(`${BASE}/api/reports/clinic/pdf`, "_blank");
+export const downloadReport = () => {
+  const lang = localStorage.getItem('hormi-lang') || 'es';
+  window.open(`${BASE}/api/reports/clinic/pdf?lang=${lang}`, "_blank");
+};

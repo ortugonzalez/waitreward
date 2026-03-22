@@ -265,49 +265,49 @@ function QRRewardModal({ data, onClose, t }) {
     if (n.includes("farmacia") || n.includes("pharmacy")) {
       return (
         <ul className="list-disc pl-4 text-[11px] text-[var(--text-secondary)] flex flex-col gap-1 mt-1">
-          <li>15% de descuento en medicamentos genéricos</li>
-          <li>Tope máximo: $2.000 por canje</li>
-          <li>Válido en productos seleccionados</li>
-          <li>No acumulable con otras promociones</li>
+          <li>{t('condPharmacy1')}</li>
+          <li>{t('condPharmacy2')}</li>
+          <li>{t('condPharmacy3')}</li>
+          <li>{t('condPharmacy4')}</li>
         </ul>
       );
     }
     if (n.includes("odontología") || n.includes("dentistry")) {
       return (
         <ul className="list-disc pl-4 text-[11px] text-[var(--text-secondary)] flex flex-col gap-1 mt-1">
-          <li>20% de descuento en consulta y limpieza</li>
-          <li>Tope máximo: $5.000 por canje</li>
-          <li>Primer turno únicamente</li>
-          <li>Presentar QR al momento del turno</li>
+          <li>{t('condDentistry1')}</li>
+          <li>{t('condDentistry2')}</li>
+          <li>{t('condDentistry3')}</li>
+          <li>{t('condDentistry4')}</li>
         </ul>
       );
     }
     if (n.includes("laboratorio") || n.includes("analysis")) {
       return (
         <ul className="list-disc pl-4 text-[11px] text-[var(--text-secondary)] flex flex-col gap-1 mt-1">
-          <li>25% de descuento en análisis de rutina</li>
-          <li>Incluye: hemograma, glucemia, colesterol</li>
-          <li>No incluye estudios de alta complejidad</li>
-          <li>Válido de lunes a viernes</li>
+          <li>{t('condLab1')}</li>
+          <li>{t('condLab2')}</li>
+          <li>{t('condLab3')}</li>
+          <li>{t('condLab4')}</li>
         </ul>
       );
     }
     if (n.includes("dietética") || n.includes("dietetics")) {
       return (
         <ul className="list-disc pl-4 text-[11px] text-[var(--text-secondary)] flex flex-col gap-1 mt-1">
-          <li>10% de descuento en productos naturales</li>
-          <li>Tope máximo: $1.500 por canje</li>
-          <li>No incluye suplementos importados</li>
+          <li>{t('condDiet1')}</li>
+          <li>{t('condDiet2')}</li>
+          <li>{t('condDiet3')}</li>
         </ul>
       );
     }
     if (n.includes("descuento") || n.includes("discount")) {
       return (
         <ul className="list-disc pl-4 text-[11px] text-[var(--text-secondary)] flex flex-col gap-1 mt-1">
-          <li>Descuento válido en productos seleccionados</li>
-          <li>Consultar condiciones en el local</li>
-          <li>No acumulable con otras promociones</li>
-          <li>Presentar QR al momento del canje</li>
+          <li>{t('condGeneric1')}</li>
+          <li>{t('condGeneric2')}</li>
+          <li>{t('condGeneric3')}</li>
+          <li>{t('condGeneric4')}</li>
         </ul>
       );
     }
@@ -353,7 +353,7 @@ function QRRewardModal({ data, onClose, t }) {
           {conditionsNode && (
             <div className="bg-[var(--bg-primary)] w-full rounded-[16px] p-4 text-left border border-[var(--border)] mt-2 mb-2">
               <p className="text-[12px] font-bold text-[var(--text-primary)] mb-1 flex items-center gap-1">
-                <span>📋</span> {t('conditions')}:
+                {t('conditionsTitle')}:
               </p>
               {conditionsNode}
             </div>
