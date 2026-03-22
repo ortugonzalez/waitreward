@@ -8,6 +8,7 @@ import { CommerceView } from "./views/CommerceView";
 import { LoginView } from "./views/LoginView";
 import { ValidateView } from "./views/ValidateView";
 import { LanguageProvider, useTranslation } from "./i18n";
+import { DemoNotification } from "./components/DemoNotification";
 
 function loadSession() {
   try { return JSON.parse(localStorage.getItem("wr_session")) || null; }
@@ -26,6 +27,12 @@ function AppContent() {
     const s = loadSession();
     return s ? ROLE_TAB[s.role] ?? "patient" : null;
   });
+
+  const [demoNotif, setDemoNotif] = useState(null);
+  const triggerNotif = (type) => {
+    setDemoNotif(null);
+    setTimeout(() => setDemoNotif(type), 10);
+  };
 
   const handleLogin = (sessionData) => {
     setSession(sessionData);
@@ -88,6 +95,7 @@ function AppContent() {
 
   return (
     <>
+      <DemoNotification type={demoNotif} onClose={() => setDemoNotif(null)} />
       {toaster}
       <Layout
         session={session}
@@ -98,6 +106,29 @@ function AppContent() {
       >
         {VIEWS[activeTab] || VIEWS[ROLE_TAB[session.role] || "patient"]}
       </Layout>
+
+      {/* Demo Controls */}
+      <div style={{
+        position: 'fixed', bottom: 80, right: 16,
+        zIndex: 9998, display: urlParams.get('demo') === 'true' ? 'flex' : 'none',
+        flexDirection: 'column', gap: 8
+      }}>
+        <button onClick={() => triggerNotif('queue')}
+          style={{background:'#333',color:'white',border:'none',
+          borderRadius:8,padding:'8px 12px',fontSize:12,cursor:'pointer',boxShadow:'0 2px 8px rgba(0,0,0,0.2)'}}>
+          🏥 Notif cola
+        </button>
+        <button onClick={() => triggerNotif('points')}
+          style={{background:'#7F77DD',color:'white',border:'none',
+          borderRadius:8,padding:'8px 12px',fontSize:12,cursor:'pointer',boxShadow:'0 2px 8px rgba(0,0,0,0.2)'}}>
+          ⏱️ Notif puntos
+        </button>
+        <button onClick={() => triggerNotif('levelup')}
+          style={{background:'#22C55E',color:'white',border:'none',
+          borderRadius:8,padding:'8px 12px',fontSize:12,cursor:'pointer',boxShadow:'0 2px 8px rgba(0,0,0,0.2)'}}>
+          🥈 Notif nivel
+        </button>
+      </div>
     </>
   );
 }

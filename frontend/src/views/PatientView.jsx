@@ -17,6 +17,9 @@ export function PatientView({ session, onLogout }) {
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
+  // ── Push notifications ───────────────────────────────────────────────────────
+  const [notifState, setNotifState] = useState("idle"); // idle | pending | granted | denied
+
   const fetchPoints = useCallback(async () => {
     if (!session?.wallet) { setLoadingPts(false); return; }
     setLoadingPts(true);
@@ -53,6 +56,73 @@ export function PatientView({ session, onLogout }) {
       setHistoryLoading(false);
     }
   }, [session?.wallet]);
+
+  const subscribeToNotifications = useCallback(async () => {
+    console.log("Intentando suscribir push...");
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+      toast.error("Tu navegador no soporta notificaciones.");
+      return;
+    }
+    setNotifState("pending");
+    try {
+      const permission = await Notification.requestPermission();
+      console.log("Permission result:", permission);
+      if (permission !== "granted") {
+        setNotifState("denied");
+        toast.error("Permiso de notificaciones denegado.");
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+      console.log("SW ready:", registration);
+
+      // Obtener VAPID key del backend
+      const vapidRes = await fetch(`${API_URL}/api/push/vapid-public-key`);
+      const { key: vapidKey } = await vapidRes.json();
+      console.log("VAPID key:", vapidKey);
+
+      // Convertir VAPID key de base64url a Uint8Array
+      const urlBase64 = vapidKey.replace(/-/g, "+").replace(/_/g, "/");
+      const padding = "=".repeat((4 - (urlBase64.length % 4)) % 4);
+      const base64 = urlBase64 + padding;
+      const rawKey = atob(base64);
+      const applicationServerKey = Uint8Array.from([...rawKey].map((c) => c.charCodeAt(0)));
+
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey,
+      });
+      console.log("Subscription created:", subscription.endpoint);
+
+      const res = await fetch(`${API_URL}/api/push/subscribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wallet: session.wallet, subscription }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Error al guardar suscripción");
+
+      setNotifState("granted");
+      toast.success("🔔 ¡Notificaciones activadas!");
+    } catch (err) {
+      console.error("Push subscribe error:", err);
+      setNotifState("idle");
+      toast.error("Error al activar notificaciones.");
+    }
+  }, [session?.wallet]);
+
+  // Al montar: detectar si ya tiene permiso y suscribir silenciosamente
+  useEffect(() => {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "granted") {
+      setNotifState("granted");
+      // Re-suscribir silenciosamente por si cambió el endpoint
+      subscribeToNotifications();
+    } else if (Notification.permission === "denied") {
+      setNotifState("denied");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     fetchPoints();
