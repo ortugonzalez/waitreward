@@ -12,8 +12,8 @@ const SIMULATE_PAYLOADS = {
     url: "/?role=patient",
   },
   points_received: {
-    title: "¡Recibiste 150 WaitPoints! ⏱️",
-    body: "Tu tiempo vale. Compensación por 45 min de espera.",
+    title: "¡Recibiste 350 Puntos HORMI! ⏱️",
+    body: "Tu tiempo vale. Compensación por la demora.",
     tag: "points-received",
     url: "/?role=patient",
   },
