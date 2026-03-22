@@ -1,4 +1,4 @@
-const CACHE_NAME = "hormi-v3";
+const CACHE_NAME = "hormi-v4";
 const STATIC_ASSETS = [
   "/",
   "/manifest.json",

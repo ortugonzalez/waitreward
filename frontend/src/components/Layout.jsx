@@ -36,7 +36,9 @@ export function Layout({ session, activeTab, setActiveTab, onLogout, children, i
                 style={{ width: "260px", padding: "24px" }}
             >
                 <div className="flex items-center gap-2 mb-10">
-                    <HormiLogo size="md" />
+                    <div style={{ color: '#000000' }}>
+                        <HormiLogo size="md" />
+                    </div>
                 </div>
 
                 <div className="mb-8 bg-black/10 p-4 rounded-[20px] shadow-sm">
@@ -88,7 +90,9 @@ export function Layout({ session, activeTab, setActiveTab, onLogout, children, i
                         ☰
                     </button>
                     <div className="flex items-center scale-[0.80] transform origin-center">
-                        <HormiLogo size="md" />
+                        <div style={{ color: '#000000' }}>
+                            <HormiLogo size="md" />
+                        </div>
                     </div>
                     <div className="w-10"></div> {/* Spacer balance */}
                 </div>
