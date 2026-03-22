@@ -2,10 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
 import toast from "react-hot-toast";
 import { getPoints, getPatientHistory } from "../api/client";
+import { useTranslation } from "../i18n";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export function PatientView({ session, onLogout }) {
+  const { t } = useTranslation();
   const [points, setPoints] = useState(null);
   const [loadingPts, setLoadingPts] = useState(true);
 
@@ -87,14 +89,14 @@ export function PatientView({ session, onLogout }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl">🏥</span>
-            <h3 className="font-bold text-[#1A1A2E] text-base">Tu turno en tiempo real</h3>
+            <h3 className="font-bold text-[var(--text-primary)] text-base">{t('realTimeQueue')}</h3>
           </div>
           <button
             onClick={fetchQueue}
             disabled={queueLoading}
             className="text-xs bg-[#7F77DD]/10 text-[#7F77DD] font-bold px-3 py-1.5 rounded-[8px] active:scale-95 transition-transform"
           >
-            {queueLoading ? "Actualizando..." : "Actualizar"}
+            {queueLoading ? "Actualizando..." : t('update')}
           </button>
         </div>
 
@@ -107,8 +109,8 @@ export function PatientView({ session, onLogout }) {
             <div className="flex items-center gap-3">
               <span className="text-2xl opacity-80">👥</span>
               <div>
-                <p className="text-[17px] font-black text-[#1A1A2E]">
-                  {queue.patients_ahead} pacientes delante tuyo
+                <p className="text-[17px] font-black text-[var(--text-primary)]">
+                  {queue.patients_ahead} {t('patientsAhead')}
                 </p>
               </div>
             </div>
@@ -116,8 +118,8 @@ export function PatientView({ session, onLogout }) {
               <div className="flex items-center gap-3">
                 <span className="text-2xl opacity-80">⏱️</span>
                 <div>
-                  <p className="text-[17px] font-black text-[#1A1A2E]">
-                    Demora est. {queue.estimated_wait_minutes} min
+                  <p className="text-[17px] font-black text-[var(--text-primary)]">
+                    {t('estimatedDelay')} {queue.estimated_wait_minutes} min
                   </p>
                 </div>
               </div>
@@ -135,8 +137,8 @@ export function PatientView({ session, onLogout }) {
 
       {/* Mi historial */}
       <div>
-        <h3 className="font-bold text-[#1A1A2E] text-lg mb-1 px-1">Mi historial</h3>
-        <p className="text-[13px] text-gray-500 mb-4 px-1">Turnos registrados en blockchain</p>
+        <h3 className="font-bold text-[var(--text-primary)] text-lg mb-1 px-1">Mi historial</h3>
+        <p className="text-[13px] text-[var(--text-secondary)] mb-4 px-1">Turnos registrados en blockchain</p>
 
         {historyLoading ? (
           <div className="flex justify-center py-6">
@@ -225,8 +227,8 @@ export function PatientView({ session, onLogout }) {
           </div>
         </div>
         
-        <p className="text-center text-[13px] font-medium text-gray-400 mt-6 mb-2">
-          ❤️ Tu tiempo vale. Ahora lo demostramos.
+        <p className="text-center text-[13px] font-medium text-[var(--text-secondary)] mt-6 mb-2">
+          ❤️ {t('tagline')}
         </p>
       </div>
 

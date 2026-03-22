@@ -6,11 +6,29 @@
   * {
     -webkit-tap-highlight-color: transparent;
   }
+  
+  :root {
+    --bg-primary: #F8F7FF;
+    --bg-secondary: #FFFFFF;
+    --text-primary: #1A1A2E;
+    --text-secondary: #666666;
+    --border: #E5E7EB;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #0F0F1A;
+    --bg-secondary: #1A1A2E;
+    --text-primary: #F0F0FF;
+    --text-secondary: #A0A0BB;
+    --border: #2A2A3E;
+  }
+
   body {
-    background-color: #F5F5F5;
-    color: #1a1a1a;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     padding-top: env(safe-area-inset-top);
+    transition: background-color 0.2s, color 0.2s;
   }
 }
 

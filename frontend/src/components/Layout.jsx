@@ -1,11 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigation, SidebarNav } from "./Navigation";
+import { HormiLogo } from "./HormiLogo";
+import { useTranslation } from "../i18n";
 
 export function Layout({ session, activeTab, setActiveTab, onLogout, children, isHome }) {
+    const { t, lang, setLang } = useTranslation();
     const [drawerOpen, setDrawerOpen] = useState(false);
+    
+    // Auto-update toggles UI on theme change
+    const [isDark, setIsDark] = useState(false);
+    useEffect(() => {
+        setIsDark(document.documentElement.getAttribute('data-theme') === 'dark');
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((m) => {
+                if(m.attributeName === 'data-theme') setIsDark(document.documentElement.getAttribute('data-theme') === 'dark');
+            });
+        });
+        observer.observe(document.documentElement, { attributes: true });
+        return () => observer.disconnect();
+    }, []);
+
+    const toggleTheme = () => {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('hormi-theme', next);
+    };
 
     return (
-        <div className="bg-[#F8F7FF] min-h-screen lg:flex lg:flex-row w-full font-sans">
+        <div className="bg-[var(--bg-primary)] min-h-screen lg:flex lg:flex-row w-full font-sans transition-colors">
             
             {/* ── DESKTOP SIDEBAR ── */}
             <aside
@@ -13,8 +36,7 @@ export function Layout({ session, activeTab, setActiveTab, onLogout, children, i
                 style={{ width: "260px", background: "#7F77DD", color: "white", padding: "24px" }}
             >
                 <div className="flex items-center gap-2 mb-10">
-                    <span className="text-2xl">⏱</span>
-                    <span className="text-xl font-black tracking-tight">HORMI</span>
+                    <HormiLogo size="md" />
                 </div>
 
                 <div className="mb-8 bg-white/10 p-4 rounded-[20px] shadow-sm">
@@ -26,7 +48,7 @@ export function Layout({ session, activeTab, setActiveTab, onLogout, children, i
                         <div className="flex flex-col">
                             <span className="font-bold text-[15px] leading-tight truncate max-w-[130px]">{session?.name || "Usuario"}</span>
                             <span className="text-[11px] font-bold text-white/80 uppercase tracking-wide mt-0.5">
-                                {session?.role === 'patient' ? 'Paciente' : session?.role === 'clinic' ? 'Médico' : 'Comercio'}
+                                {session?.role === 'patient' ? 'PACIENTE' : session?.role === 'clinic' ? 'MÉDICO' : 'COMERCIO'}
                             </span>
                         </div>
                     </div>
@@ -36,28 +58,38 @@ export function Layout({ session, activeTab, setActiveTab, onLogout, children, i
                     <SidebarNav activeTab={activeTab} setActiveTab={setActiveTab} session={session} />
                 </nav>
 
-                <div className="mt-auto pt-6 border-t border-white/20">
+                <div className="mt-auto pt-4 border-t border-white/20 flex flex-col gap-2">
+                    <div className="flex gap-2 mb-2">
+                        <button onClick={() => setLang(lang === 'es' ? 'en' : 'es')} className="text-[11px] font-bold border border-white/30 px-2 py-2 rounded-[8px] text-white hover:bg-white/10 transition-colors flex-1 text-center">
+                            {lang === 'es' ? '🇦🇷 ES' : '🇺🇸 EN'}
+                        </button>
+                        <button onClick={toggleTheme} className="text-[11px] font-bold border border-white/30 px-2 py-2 rounded-[8px] text-white hover:bg-white/10 transition-colors flex-1 text-center">
+                            {isDark ? '☀️ Claro' : '🌙 Oscuro'}
+                        </button>
+                    </div>
                     <button
                         onClick={onLogout}
-                        className="w-full text-left flex items-center gap-3 text-white/80 hover:text-white hover:bg-white/10 px-4 py-3 rounded-[12px] font-bold text-[14px] transition-all"
+                        className="w-full text-left flex items-center gap-3 text-red-300 hover:text-red-200 hover:bg-white/10 px-4 py-3 rounded-[12px] font-bold text-[14px] transition-all"
                     >
-                        <span className="text-lg opacity-80">🚪</span> Cerrar sesión
+                        <span className="text-lg opacity-80">🚪</span> {t('logout')}
                     </button>
                 </div>
             </aside>
 
             {/* ── MAIN CONTENT AREA ── */}
-            <div className={`flex-1 flex flex-col min-w-0 h-[100dvh] lg:h-screen lg:overflow-y-auto overflow-x-hidden relative pt-[max(16px,env(safe-area-inset-top))] lg:pt-0`}>
+            <div className={`flex-1 flex flex-col min-w-0 h-[100dvh] lg:h-screen lg:overflow-y-auto overflow-x-hidden relative`}>
 
-                {/* ── MOBILE HEADER CON HAMBURGUESA ── */}
-                <div className="lg:hidden flex items-center px-4 py-3 bg-[#F8F7FF] z-40 sticky top-0 justify-between">
+                {/* ── MOBILE HEADER CON FIX 1 ESTÁTICO ── */}
+                <div className="lg:hidden flex items-center px-4 bg-[var(--bg-secondary)] shadow-sm sticky top-0 justify-between transition-colors z-[100] h-[56px] border-b border-[var(--border)] pt-[env(safe-area-inset-top)] box-content">
                     <button 
                         onClick={() => setDrawerOpen(true)} 
-                        className="text-2xl p-1 text-[#1A1A2E] bg-white rounded-lg shadow-sm border border-gray-100 flex items-center justify-center w-10 h-10 active:scale-95"
+                        className="text-2xl p-1 text-[var(--text-primary)] rounded-lg flex items-center justify-center w-10 h-10 active:scale-95"
                     >
                         ☰
                     </button>
-                    <div className="font-black text-lg text-[#1A1A2E] tracking-tight">{isHome ? "Beneficios" : "HORMI"}</div>
+                    <div className="flex items-center scale-[0.80] transform origin-center">
+                        <HormiLogo size="md" />
+                    </div>
                     <div className="w-10"></div> {/* Spacer balance */}
                 </div>
 
@@ -65,36 +97,45 @@ export function Layout({ session, activeTab, setActiveTab, onLogout, children, i
                     {children}
                 </main>
 
-                {/* ── MOBILE DRAWER (HAMBURGER MENU) ── */}
+                {/* ── MOBILE DRAWER (HAMBURGER MENU) FIX 3 ── */}
                 {drawerOpen && (
                     <div className="fixed inset-0 z-[9999] lg:hidden flex">
                         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
                         
-                        <div className="relative w-[280px] h-full bg-white shadow-2xl flex flex-col animate-slide-right">
+                        <div className="relative w-[280px] h-full bg-[#FFFFFF] shadow-2xl flex flex-col animate-slide-right">
+                            
                             {/* Drawer Header userInfo */}
-                            <div className="p-6 bg-[#7F77DD] text-white flex flex-col gap-4">
-                                <button onClick={() => setDrawerOpen(false)} className="absolute top-4 right-4 text-white/70 hover:text-white text-xl">✕</button>
+                            <div className="p-6 bg-[#FFFFFF] border-b border-gray-100 flex flex-col gap-4 relative">
+                                <button onClick={() => setDrawerOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 text-xl font-bold">✕</button>
                                 
-                                <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center font-black text-2xl text-[#7F77DD] shadow-sm">
+                                <div className="w-14 h-14 rounded-full bg-[#7F77DD] flex items-center justify-center font-black text-2xl text-white shadow-sm">
                                     {session?.name ? session.name.charAt(0).toUpperCase() : "U"}
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="font-black text-lg leading-tight truncate">{session?.name || "Usuario"}</span>
-                                    <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest mt-1">
+                                    <span className="font-bold text-[16px] leading-tight truncate text-[#1A1A2E]">{session?.name || "Usuario"}</span>
+                                    <span className="text-[12px] font-semibold text-[#7F77DD] uppercase tracking-widest mt-1">
                                         {session?.role === 'patient' ? 'PACIENTE' : session?.role === 'clinic' ? 'MÉDICO' : session?.role === 'commerce' ? 'COMERCIO' : 'INVITADO'}
                                     </span>
                                 </div>
                             </div>
                             
                             {/* Drawer Links */}
-                            <div className="flex-1 overflow-y-auto py-4 flex flex-col gap-1 px-3">
+                            <div className="flex-1 overflow-y-auto py-2 flex flex-col px-1">
                                 <SidebarNav activeTab={activeTab} setActiveTab={(t) => { setActiveTab(t); setDrawerOpen(false); }} session={session} mobileDrawer={true} />
                             </div>
                             
-                            {/* Drawer Footer Logout */}
-                            <div className="p-4 border-t border-gray-100 mb-4">
-                                <button onClick={() => { setDrawerOpen(false); onLogout(); }} className="w-full text-left px-4 py-3 text-red-600 font-bold flex items-center gap-3 bg-red-50 hover:bg-red-100 rounded-[12px] transition-colors">
-                                    <span className="text-lg">🚪</span> Cerrar sesión
+                            {/* Drawer Footer Logout & Toggles */}
+                            <div className="p-4 border-t border-gray-100 bg-[#FFFFFF] flex flex-col gap-3">
+                                <div className="flex gap-2">
+                                    <button onClick={() => setLang(lang === 'es' ? 'en' : 'es')} className="text-[12px] font-bold border border-gray-200 px-2 py-2.5 rounded-[12px] text-[#1A1A2E] hover:bg-gray-50 transition-colors flex-1 text-center">
+                                        {lang === 'es' ? '🇦🇷 Español' : '🇺🇸 English'}
+                                    </button>
+                                    <button onClick={toggleTheme} className="text-[12px] font-bold border border-gray-200 px-2 py-2.5 rounded-[12px] text-[#1A1A2E] hover:bg-gray-50 transition-colors flex-1 text-center">
+                                        {isDark ? '☀️ Claro' : '🌙 Oscuro'}
+                                    </button>
+                                </div>
+                                <button onClick={() => { setDrawerOpen(false); onLogout(); }} className="w-full text-left px-4 py-3 text-[#EF4444] font-semibold flex items-center gap-3 bg-red-50 hover:bg-red-100 rounded-[12px] transition-colors mt-1">
+                                    <span className="text-lg">🚪</span> {t('logout')}
                                 </button>
                             </div>
                         </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { settle, getAIPrediction, verifyContract, downloadReport } from "../api/client";
 import { PointsBadge } from "../components/PointsBadge";
+import { useTranslation } from "../i18n";
 
 const HISTORY_KEY = "wr_clinic_history";
 const MAX_HISTORY = 5;
@@ -30,6 +31,7 @@ function toLocalDateTimeValue(date = new Date()) {
 }
 
 export function ClinicView({ session, onLogout }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     appointmentId: "",
     patientDNI: "",
@@ -190,11 +192,11 @@ export function ClinicView({ session, onLogout }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl">🤖</span>
-            <h2 className="font-bold text-[#1A1A2E] text-base">Predicción de demora (IA)</h2>
+            <h2 className="font-bold text-[#1A1A2E] text-base">{t('prediction.title')}</h2>
           </div>
         </div>
         <p className="text-[13px] text-gray-500 leading-tight">
-          Seleccioná una especialidad para ver la demora estimada en tiempo real.
+          {t('prediction.description')}
         </p>
 
         <div className="grid grid-cols-3 gap-2 mt-1">
@@ -216,7 +218,7 @@ export function ClinicView({ session, onLogout }) {
         {predictionLoading && (
           <div className="flex flex-col items-center justify-center py-6 gap-3">
             <div className="w-8 h-8 border-4 border-[#7F77DD] border-t-transparent rounded-full animate-spin" />
-            <span className="text-[13px] font-bold text-[#7F77DD]">Procesando datos del modelo...</span>
+            <span className="text-[13px] font-bold text-[#7F77DD]">{t('prediction.loading')}</span>
           </div>
         )}
 
@@ -237,15 +239,15 @@ export function ClinicView({ session, onLogout }) {
                   <span className="text-2xl block">⏱️</span>
                 </div>
                 <div>
-                  <p className="text-[11px] font-bold text-[#7F77DD] uppercase tracking-widest">Demora est.</p>
+                  <p className="text-[11px] font-bold text-[#7F77DD] uppercase tracking-widest">{t('prediction.estimatedDelay')}</p>
                   <p className="text-[32px] font-black text-[#1A1A2E] leading-none mt-1">
-                    {prediction.predicted_delay_minutes ?? prediction.predicted_delay ?? "—"} <span className="text-sm text-gray-500 font-bold">min</span>
+                    {prediction.predicted_delay_minutes ?? prediction.predicted_delay ?? "—"} <span className="text-sm text-gray-500 font-bold">{t('prediction.minutes')}</span>
                   </p>
                 </div>
               </div>
 
               <div className="text-right">
-                <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Pacientes</p>
+                <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">{t('prediction.patientsAhead')}</p>
                 <div className="flex items-center justify-end gap-1 mt-1 text-[#1A1A2E] font-black text-xl">
                   <span>👥</span> {prediction.patients_ahead ?? "—"}
                 </div>
@@ -254,7 +256,7 @@ export function ClinicView({ session, onLogout }) {
 
             <div className="flex flex-col gap-1.5 relative z-10">
               <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
-                <span className="text-[#22C55E]">Confianza del modelo</span>
+                <span className="text-[#22C55E]">{t('prediction.modelConfidence')}</span>
                 <span className="text-gray-500">{Math.round((prediction.confidence ?? 0) * 100)}%</span>
               </div>
               <div className="w-full h-2.5 bg-white/60 rounded-full overflow-hidden shadow-inner">
@@ -275,10 +277,10 @@ export function ClinicView({ session, onLogout }) {
       <form onSubmit={handleSubmit} className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 flex flex-col gap-4">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-xl">📝</span>
-          <h2 className="font-bold text-[#1A1A2E] text-base">Registrar atención</h2>
+          <h2 className="font-bold text-[#1A1A2E] text-base">{t('registerAttention')}</h2>
         </div>
 
-        <Field label="Número de turno" htmlFor="appointmentId">
+        <Field label={t('form.appointmentNumber')} htmlFor="appointmentId">
           <input
             id="appointmentId"
             name="appointmentId"
@@ -290,7 +292,7 @@ export function ClinicView({ session, onLogout }) {
           />
         </Field>
 
-        <Field label="DNI del paciente" htmlFor="patientDNI">
+        <Field label={t('form.patientDNI')} htmlFor="patientDNI">
           <div className="relative">
             <input
               id="patientDNI"
@@ -315,7 +317,7 @@ export function ClinicView({ session, onLogout }) {
         </Field>
 
         <div className="flex gap-3">
-          <Field label="Programada" htmlFor="scheduledDatetime" className="flex-1">
+          <Field label={t('form.scheduled')} htmlFor="scheduledDatetime" className="flex-1">
             <input
               id="scheduledDatetime"
               name="scheduledDatetime"
@@ -328,7 +330,7 @@ export function ClinicView({ session, onLogout }) {
               className={inputCls}
             />
           </Field>
-          <Field label="Real" htmlFor="actualDatetime" className="flex-1">
+          <Field label={t('form.actual')} htmlFor="actualDatetime" className="flex-1">
             <input
               id="actualDatetime"
               name="actualDatetime"
@@ -351,7 +353,7 @@ export function ClinicView({ session, onLogout }) {
           {loading ? (
             <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : (
-            "Registrar y emitir puntos"
+            t('form.registerAndAwardPoints')
           )}
         </button>
       </form>

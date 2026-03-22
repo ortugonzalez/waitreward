@@ -1,92 +1,110 @@
-const VIEW_LABELS = {
-  home: "Beneficios",
-  patient: "Mi Panel",
-  clinic: "Panel Médico",
-  commerce: "Panel Comercio",
-};
-
-// Define visible tabs for each role
-function getTabsForRole(role) {
-  if (role === "patient") {
-    return [
-      { id: "patient", label: "Mi Panel", icon: "🧑‍⚕️" },
-      { id: "home", label: "Beneficios", icon: "🎁" },
-    ];
-  }
-  if (role === "clinic") {
-    return [
-      { id: "clinic", label: "Panel Médico", icon: "👨‍⚕️" }
-    ];
-  }
-  if (role === "commerce") {
-    return [
-      { id: "commerce", label: "Panel Comercio", icon: "🏪" }
-    ];
-  }
-  return [];
-}
+import { useTranslation } from "../i18n";
 
 export function Header({ activeTab }) {
-  return (
-    <header className="fixed top-0 left-0 right-0 z-20 bg-white border-b border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
-      <div className="max-w-app mx-auto flex items-center justify-between px-4 h-14">
-        <span className="text-lg font-black text-[#7F77DD] tracking-tight flex items-center gap-1.5"><span className="text-[15px]">⏱</span> HORMI</span>
-        <span className="text-[13px] font-bold text-gray-400 tracking-wide uppercase">{VIEW_LABELS[activeTab] || ""}</span>
-      </div>
-    </header>
-  );
+    return null; 
 }
 
-// ── Mobile Bottom Navigation ──
-export function Navigation({ activeTab, setActiveTab, session }) {
-  const tabs = session ? getTabsForRole(session.role) : [];
+export function SidebarNav({ activeTab, setActiveTab, session, mobileDrawer = false }) {
+    const { t } = useTranslation();
+    const isPatient = session?.role === "patient";
+    const isAdmin = session?.role === "clinic";
+    
+    // Classes adapt based on whether they are in Desktop sidebar (dark/white theme) or Mobile drawer (white/gray theme)
+    const baseLinkClass = "flex items-center gap-3 px-4 py-3 rounded-[12px] font-bold text-[14px] transition-all";
+    const inactiveClass = mobileDrawer 
+        ? "text-[#1A1A2E] hover:bg-gray-50" 
+        : "text-white/80 hover:text-white hover:bg-white/10";
+    
+    const activeClass = mobileDrawer
+        ? "bg-[#7F77DD]/10 text-[#7F77DD]"
+        : "bg-white/20 text-white shadow-sm";
 
-  if (tabs.length <= 1) return null; // Only show bottom bar if there's more than one option (like patient)
-
-  return (
-    <nav className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-gray-200 pb-safe">
-      <div className="max-w-app mx-auto flex">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors relative
-              ${activeTab === tab.id
-                ? "text-[#7F77DD]"
-                : "text-gray-400 hover:text-gray-600"
-              }`}
-          >
-            <span className={`text-[22px] leading-none transition-transform ${activeTab === tab.id ? 'scale-110' : ''}`}>{tab.icon}</span>
-            <span className={`text-[11px] ${activeTab === tab.id ? 'font-black' : 'font-medium'}`}>{tab.label}</span>
-            {activeTab === tab.id && (
-              <span className="absolute top-0 w-12 h-1 bg-[#7F77DD] rounded-b-full shadow-[0_2px_8px_rgba(127,119,221,0.5)]" />
+    return (
+        <>
+            {isPatient && (
+                <>
+                    <button
+                        onClick={() => setActiveTab("patient")}
+                        className={`${baseLinkClass} ${activeTab === "patient" ? activeClass : inactiveClass}`}
+                    >
+                        <span className="text-xl">🏥</span> {t('myPanel')}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("home")}
+                        className={`${baseLinkClass} ${activeTab === "home" ? activeClass : inactiveClass}`}
+                    >
+                        <span className="text-xl">🎁</span> {t('benefits')}
+                    </button>
+                </>
             )}
-          </button>
-        ))}
-      </div>
-    </nav>
-  );
+
+            {isAdmin && (
+                <button
+                    onClick={() => setActiveTab("clinic")}
+                    className={`${baseLinkClass} ${activeTab === "clinic" ? activeClass : inactiveClass}`}
+                >
+                    <span className="text-xl">👨‍⚕️</span> {t('myPanel')}
+                </button>
+            )}
+
+            {!isPatient && !isAdmin && (
+                <button
+                    onClick={() => setActiveTab("commerce")}
+                    className={`${baseLinkClass} ${activeTab === "commerce" ? activeClass : inactiveClass}`}
+                >
+                    <span className="text-xl">🏪</span> {t('myPanel')}
+                </button>
+            )}
+        </>
+    );
 }
 
-// ── Desktop Sidebar Navigation ──
-export function SidebarNav({ activeTab, setActiveTab, session }) {
-  const tabs = session ? getTabsForRole(session.role) : [];
+export function Navigation({ activeTab, setActiveTab, session }) {
+    const { t } = useTranslation();
+    const isPatient = session?.role === "patient";
+    const isAdmin = session?.role === "clinic";
 
-  return (
-    <>
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => setActiveTab(tab.id)}
-          className={`w-full flex items-center gap-4 px-4 py-3 rounded-[16px] transition-all text-left ${activeTab === tab.id
-              ? "bg-white text-[#7F77DD] shadow-[0_4px_16px_rgba(0,0,0,0.1)] scale-[1.02]"
-              : "text-white/80 hover:bg-white/10 hover:text-white"
-            }`}
-        >
-          <span className="text-xl">{tab.icon}</span>
-          <span className={`text-[15px] ${activeTab === tab.id ? 'font-black' : 'font-bold'}`}>{tab.label}</span>
-        </button>
-      ))}
-    </>
-  );
+    return (
+        <div className="fixed bottom-0 left-0 right-0 bg-[var(--bg-secondary)] border-t border-[var(--border)] px-6 py-3 flex justify-around items-center z-50 shadow-[0_-4px_24px_rgba(0,0,0,0.06)] transition-colors pb-[max(12px,env(safe-area-inset-bottom))]">
+            
+            {isPatient && (
+                <>
+                    <button
+                        onClick={() => setActiveTab("patient")}
+                        className={`flex flex-col items-center gap-1 transition-all flex-1 ${activeTab === "patient" ? "text-[#7F77DD]" : "text-[var(--text-secondary)]"}`}
+                    >
+                        <span className={`text-[22px] ${activeTab === "patient" ? "scale-110 drop-shadow-sm" : "opacity-60 grayscale"}`}>🏥</span>
+                        <span className="text-[10px] font-bold tracking-wide">{t('myPanel')}</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("home")}
+                        className={`flex flex-col items-center gap-1 transition-all flex-1 ${activeTab === "home" ? "text-[#7F77DD]" : "text-[var(--text-secondary)]"}`}
+                    >
+                        <span className={`text-[22px] ${activeTab === "home" ? "scale-110 drop-shadow-sm" : "opacity-60 grayscale"}`}>🎁</span>
+                        <span className="text-[10px] font-bold tracking-wide">{t('benefits')}</span>
+                    </button>
+                </>
+            )}
+
+            {isAdmin && (
+                <button
+                    onClick={() => setActiveTab("clinic")}
+                    className={`flex flex-col items-center gap-1 transition-all flex-1 ${activeTab === "clinic" ? "text-[#7F77DD]" : "text-[var(--text-secondary)]"}`}
+                >
+                    <span className={`text-[22px] ${activeTab === "clinic" ? "scale-110 drop-shadow-sm" : "opacity-60 grayscale"}`}>👨‍⚕️</span>
+                    <span className="text-[10px] font-bold tracking-wide">{t('myPanel')}</span>
+                </button>
+            )}
+
+            {!isPatient && !isAdmin && (
+                <button
+                    onClick={() => setActiveTab("commerce")}
+                    className={`flex flex-col items-center gap-1 transition-all flex-1 ${activeTab === "commerce" ? "text-[#7F77DD]" : "text-[var(--text-secondary)]"}`}
+                >
+                    <span className={`text-[22px] ${activeTab === "commerce" ? "scale-110 drop-shadow-sm" : "opacity-60 grayscale"}`}>🏪</span>
+                    <span className="text-[10px] font-bold tracking-wide">{t('myPanel')}</span>
+                </button>
+            )}
+        </div>
+    );
 }
