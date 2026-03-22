@@ -19,6 +19,7 @@ const analyticsRouter = require("./routes/analytics");
 const historyRouter   = require("./routes/history");
 const contractRouter  = require("./routes/contract");
 const reportsRouter   = require("./routes/reports");
+const ownerRouter     = require("./routes/owner");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -71,6 +72,7 @@ app.use("/api/analytics", analyticsRouter);
 app.use("/api/history",   historyRouter);
 app.use("/api/contract",  contractRouter);
 app.use("/api/reports",   reportsRouter);
+app.use("/api/owner",     ownerRouter);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => {
