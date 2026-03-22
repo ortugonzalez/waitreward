@@ -154,6 +154,27 @@ export function PatientView({ session, onLogout }) {
         </div>
       </div>
 
+      {/* Botón activar notificaciones */}
+      {notifState !== "granted" && notifState !== "denied" && (
+        <button
+          onClick={subscribeToNotifications}
+          disabled={notifState === "pending"}
+          className="w-full flex items-center justify-center gap-2 bg-[#7F77DD] text-white font-bold text-sm py-3 rounded-[14px] shadow-[0_4px_16px_rgba(127,119,221,0.35)] active:scale-95 transition-all disabled:opacity-60"
+        >
+          {notifState === "pending" ? (
+            <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Activando...</>
+          ) : (
+            <>🔔 Activar notificaciones</>
+          )}
+        </button>
+      )}
+      {notifState === "denied" && (
+        <div className="w-full flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-[14px] px-4 py-3">
+          <span className="text-lg">🔕</span>
+          <p className="text-xs text-orange-700 font-bold">Notificaciones bloqueadas. Habilitálas desde la configuración del navegador.</p>
+        </div>
+      )}
+
       {/* Cola en tiempo real */}
       <div className="bg-[var(--bg-secondary)] border-l-4 border-[#7F77DD] rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-5 flex flex-col gap-4 relative overflow-hidden transition-colors">
         <div className="flex items-center justify-between">
