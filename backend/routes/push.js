@@ -61,11 +61,11 @@ router.post("/simulate", async (req, res) => {
 
   const wallet = user.wallet_address;
 
-  // Check that at least one subscription exists
+  // Check subscription exists by DNI
   const { data: subs } = await supabase
     .from("wr_push_subscriptions")
     .select("id")
-    .eq("wallet", wallet.toLowerCase())
+    .eq("dni", String(dni))
     .limit(1);
 
   if (!subs || subs.length === 0) {
@@ -75,7 +75,7 @@ router.post("/simulate", async (req, res) => {
     });
   }
 
-  await sendPushToWallet(wallet, payload);
+  await sendPushToWallet(wallet, payload, String(dni));
 
   res.json({
     success: true,
@@ -102,23 +102,21 @@ router.get("/vapid-public-key", (_req, res) => {
  * Saves or updates a push subscription for the given wallet.
  */
 router.post("/subscribe", async (req, res) => {
-  const { wallet, subscription } = req.body;
-  if (!wallet || !subscription?.endpoint) {
-    return res.status(400).json({ success: false, error: "wallet y subscription son requeridos" });
+  const { dni, subscription } = req.body;
+  if (!dni || !subscription?.endpoint) {
+    return res.status(400).json({ success: false, error: "dni y subscription son requeridos" });
   }
 
   try {
-    // Upsert by endpoint to avoid duplicates
     const { error } = await supabase
       .from("wr_push_subscriptions")
       .upsert(
         {
-          wallet: wallet.toLowerCase(),
-          endpoint: subscription.endpoint,
-          subscription,
+          dni: String(dni),
+          subscription: JSON.stringify(subscription),
           created_at: new Date().toISOString(),
         },
-        { onConflict: "endpoint" }
+        { onConflict: "dni" }
       );
 
     if (error) throw error;

@@ -11,16 +11,33 @@ webpush.setVapidDetails(
  * Send a push notification to all subscriptions for a given wallet.
  * Silently removes expired/invalid subscriptions.
  */
-async function sendPushToWallet(walletAddress, payload) {
+async function sendPushToWallet(walletAddress, payload, dni) {
   if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) return;
 
   let rows = [];
   try {
-    const { data } = await supabase
-      .from("wr_push_subscriptions")
-      .select("id, subscription")
-      .eq("wallet", walletAddress.toLowerCase());
-    rows = data || [];
+    // Query by DNI if provided, otherwise fall back to wallet lookup via wr_users
+    if (dni) {
+      const { data } = await supabase
+        .from("wr_push_subscriptions")
+        .select("id, subscription")
+        .eq("dni", String(dni));
+      rows = data || [];
+    } else {
+      // Resolve wallet → DNI first
+      const { data: user } = await supabase
+        .from("wr_users")
+        .select("dni")
+        .eq("wallet_address", walletAddress.toLowerCase())
+        .single();
+      if (user?.dni) {
+        const { data } = await supabase
+          .from("wr_push_subscriptions")
+          .select("id, subscription")
+          .eq("dni", String(user.dni));
+        rows = data || [];
+      }
+    }
   } catch (e) {
     console.error("[push] Failed to fetch subscriptions:", e.message);
     return;
@@ -29,7 +46,12 @@ async function sendPushToWallet(walletAddress, payload) {
   const payloadStr = JSON.stringify(payload);
   for (const row of rows) {
     try {
-      await webpush.sendNotification(row.subscription, payloadStr);
+      // subscription puede estar guardado como string JSON o como objeto
+      const subObject =
+        typeof row.subscription === "string"
+          ? JSON.parse(row.subscription)
+          : row.subscription;
+      await webpush.sendNotification(subObject, payloadStr);
     } catch (err) {
       if (err.statusCode === 410 || err.statusCode === 404) {
         supabase.from("wr_push_subscriptions").delete().eq("id", row.id).then(() => {}).catch(() => {});

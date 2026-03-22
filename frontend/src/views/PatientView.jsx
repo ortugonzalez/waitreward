@@ -59,8 +59,26 @@ export function PatientView({ session, onLogout }) {
 
   const subscribeToNotifications = async () => {
     try {
-      if (!("Notification" in window) || !("serviceWorker" in navigator)) {
-        alert("Tu navegador no soporta notificaciones push.");
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isStandalone = window.navigator.standalone === true;
+      const isPushSupported =
+        "serviceWorker" in navigator &&
+        "PushManager" in window &&
+        "Notification" in window;
+
+      // iOS solo soporta push cuando está instalada como PWA
+      if (isIOS && !isStandalone) {
+        alert(
+          "Para recibir notificaciones en iPhone:\n\n" +
+          "1. Tocá el botón Compartir 📤\n" +
+          "2. Seleccioná \"Agregar a pantalla de inicio\"\n" +
+          "3. Abrí HORMI desde el ícono instalado"
+        );
+        return;
+      }
+
+      if (!isPushSupported) {
+        alert("Tu navegador no soporta notificaciones push.\nUsá Chrome en Android o escritorio.");
         return;
       }
 
@@ -100,11 +118,11 @@ export function PatientView({ session, onLogout }) {
       });
       console.log("Endpoint:", subscription.endpoint?.substring(0, 50) + "...");
 
-      // 5. Guardar en backend — espera { wallet, subscription }
+      // 5. Guardar en backend — espera { dni, subscription }
       const res = await fetch(`${API_URL}/api/push/subscribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wallet: session.wallet, subscription }),
+        body: JSON.stringify({ dni: session.dni, subscription }),
       });
       const data = await res.json();
       console.log("Subscribe response:", data);
@@ -174,9 +192,12 @@ export function PatientView({ session, onLogout }) {
         </button>
       )}
       {notifState === "denied" && (
-        <div className="w-full flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-[14px] px-4 py-3">
-          <span className="text-lg">🔕</span>
-          <p className="text-xs text-orange-700 font-bold">Notificaciones bloqueadas. Habilitálas desde la configuración del navegador.</p>
+        <div className="w-full flex items-start gap-2 bg-orange-50 border border-orange-200 rounded-[14px] px-4 py-3">
+          <span className="text-lg flex-shrink-0">🔕</span>
+          <div>
+            <p className="text-xs text-orange-700 font-bold">Notificaciones bloqueadas.</p>
+            <p className="text-xs text-orange-600 mt-0.5">En Chrome: candado en la barra de dirección → Notificaciones → Permitir.</p>
+          </div>
         </div>
       )}
 
