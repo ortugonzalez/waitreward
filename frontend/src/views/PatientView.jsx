@@ -65,8 +65,6 @@ export function PatientView({ session, onLogout }) {
     };
   }, [fetchPoints, fetchQueue, fetchHistory]);
 
-  const currentPts = points ?? 0;
-
   return (
     <div className="flex flex-col gap-6 px-4 bg-[#F8F7FF] min-h-screen text-[#1A1A2E] font-sans pb-8 max-w-full">
 
@@ -82,27 +80,6 @@ export function PatientView({ session, onLogout }) {
             <span className={`text-base font-bold ${loadingPts ? "animate-spin" : ""}`}>↻</span>
           </button>
         </div>
-      </div>
-
-      {/* Saldo Big Card */}
-      <div className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.08)] p-6 flex flex-col items-center relative overflow-hidden">
-        {loadingPts && points === null ? (
-          <div className="py-6">
-            <div className="w-8 h-8 border-4 border-[#7F77DD] border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : (
-          <>
-            <div className="flex items-baseline gap-1 mt-2">
-              <span className="text-[80px] font-black text-[#7F77DD] leading-none tracking-tighter">
-                {currentPts}
-              </span>
-            </div>
-            <span className="text-base font-extrabold text-gray-400 mt-1 uppercase tracking-widest">Puntos HORMI</span>
-            <span className="inline-block bg-[#22C55E]/10 text-[#22C55E] font-black text-sm px-4 py-1.5 rounded-[8px] mt-3">
-              = ${(currentPts / 100).toFixed(2)} en descuentos
-            </span>
-          </>
-        )}
       </div>
 
       {/* Cola en tiempo real */}

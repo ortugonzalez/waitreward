@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import toast from "react-hot-toast";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -9,6 +9,46 @@ export function LoginView({ onLogin }) {
   const [commerceAddress, setCommerceAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // PWA States
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [installed, setInstalled] = useState(false);
+  const [showInstallInstructions, setShowInstallInstructions] = useState(false);
+  const deferredPrompt = useRef(null);
+
+  useEffect(() => {
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setInstalled(true);
+    }
+    
+    const handler = (e) => {
+      e.preventDefault();
+      deferredPrompt.current = e;
+      setInstallPrompt(true);
+    };
+    
+    const installHandler = () => {
+      setInstalled(true);
+      setInstallPrompt(false);
+    };
+
+    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", installHandler);
+    
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", installHandler);
+    };
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt.current) return;
+    deferredPrompt.current.prompt();
+    const { outcome } = await deferredPrompt.current.userChoice;
+    if (outcome === "accepted") setInstalled(true);
+    deferredPrompt.current = null;
+    setInstallPrompt(false);
+  };
 
   const handleLogin = async (e, type, value) => {
     e.preventDefault();
@@ -184,7 +224,73 @@ export function LoginView({ onLogin }) {
           </div>
         </div>
 
+        {/* Instalar PWA Botón */}
+        {!installed && (
+          <div className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.08)] p-4 flex items-center gap-3 mt-2">
+            <span className="text-3xl">📲</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-[#1A1A2E]">Instalá HORMI</p>
+              <p className="text-[11px] text-gray-500">Accedé desde tu pantalla de inicio</p>
+            </div>
+            <button
+              onClick={installPrompt ? handleInstall : () => setShowInstallInstructions(true)}
+              className="px-4 py-2 rounded-[12px] bg-[#7F77DD] text-white font-bold text-xs active:scale-95 transition-transform flex-shrink-0"
+            >
+              Instalar
+            </button>
+          </div>
+        )}
+
       </div>
+
+      {/* PWA Modal de Instrucciones FIX 2 */}
+      {showInstallInstructions && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-[9998]" onClick={() => setShowInstallInstructions(false)}></div>
+          
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] bg-white p-6 rounded-[16px] max-w-[340px] w-[90%] shadow-[0_20px_60px_rgba(0,0,0,0.3)] flex flex-col gap-4">
+            
+            <button 
+              onClick={() => setShowInstallInstructions(false)} 
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 font-bold"
+            >
+              ✕
+            </button>
+
+            <p className="font-black text-[#1A1A2E] text-lg mt-1">Cómo instalar</p>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-start gap-3">
+                <span className="text-xl">🍎</span>
+                <div>
+                  <p className="text-sm font-bold text-[#1A1A2E]">iPhone / iPad</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Tocá el botón Compartir (<strong>⬆</strong>) y luego <strong>"Agregar a inicio"</strong></p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-xl">🤖</span>
+                <div>
+                  <p className="text-sm font-bold text-[#1A1A2E]">Android</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Tocá el menú <strong>⋮</strong> del navegador y elegí <strong>"Agregar a pantalla de inicio"</strong></p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-xl">💻</span>
+                <div>
+                  <p className="text-sm font-bold text-[#1A1A2E]">PC / Mac</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Hacé clic en el ícono <strong>⊕</strong> en la barra de direcciones del navegador</p>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowInstallInstructions(false)}
+              className="mt-2 w-full py-3 rounded-[14px] bg-[#7F77DD] text-white font-bold text-sm active:scale-95 transition-transform"
+            >
+              Entendido
+            </button>
+          </div>
+        </>
+      )}
+
     </div>
   );
 }

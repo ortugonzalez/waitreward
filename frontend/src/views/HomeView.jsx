@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -49,12 +49,6 @@ const TIERS = [
 
 export function HomeView({ setActiveTab }) {
   const [commerces, setCommerces] = useState([]);
-  const [installPrompt, setInstallPrompt] = useState(null);
-  const [installed, setInstalled] = useState(false);
-  const [showInstallInstructions, setShowInstallInstructions] = useState(false);
-  const deferredPrompt = useRef(null);
-
-  // Redemptions
   const [userPoints, setUserPoints] = useState(0);
   const [session, setSession] = useState(null);
   const [qrModal, setQrModal] = useState(null);
@@ -77,41 +71,6 @@ export function HomeView({ setActiveTab }) {
       .then((d) => { if (d.success) setCommerces(d.commerces); })
       .catch(() => {});
   }, []);
-
-  // PWA logic
-  useEffect(() => {
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setInstalled(true);
-    }
-    
-    const handler = (e) => {
-      e.preventDefault();
-      deferredPrompt.current = e;
-      setInstallPrompt(true);
-    };
-    
-    const installHandler = () => {
-      setInstalled(true);
-      setInstallPrompt(false);
-    };
-
-    window.addEventListener("beforeinstallprompt", handler);
-    window.addEventListener("appinstalled", installHandler);
-    
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
-      window.removeEventListener("appinstalled", installHandler);
-    };
-  }, []);
-
-  const handleInstall = async () => {
-    if (!deferredPrompt.current) return;
-    deferredPrompt.current.prompt();
-    const { outcome } = await deferredPrompt.current.userChoice;
-    if (outcome === "accepted") setInstalled(true);
-    deferredPrompt.current = null;
-    setInstallPrompt(false);
-  };
 
   const currentPts = userPoints;
 
@@ -159,47 +118,13 @@ export function HomeView({ setActiveTab }) {
       
       <div className="px-4 flex flex-col gap-6 relative z-10 w-full max-w-full">
 
-        {/* Instalar PWA */}
-        {!installed && (
-          <div className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.08)] p-4 flex items-center gap-3">
-            <span className="text-3xl">📲</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-[#1A1A2E]">Instalá HORMI</p>
-              <p className="text-[11px] text-gray-500">Accedé desde tu pantalla de inicio</p>
-            </div>
-            <button
-              onClick={installPrompt ? handleInstall : () => setShowInstallInstructions(true)}
-              className="px-4 py-2 rounded-[12px] bg-[#7F77DD] text-white font-bold text-xs active:scale-95 transition-transform flex-shrink-0"
-            >
-              Instalar
-            </button>
-          </div>
-        )}
-
-        {/* Modal Instrucciones iOS/PC */}
-        {showInstallInstructions && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setShowInstallInstructions(false)}>
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <div className="relative w-full max-w-sm bg-white rounded-t-[24px] p-6 pb-10 flex flex-col gap-4 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]" onClick={(e) => e.stopPropagation()}>
-              <div className="w-10 h-1.5 bg-gray-300 rounded-full mx-auto mb-1" />
-              <p className="font-black text-[#1A1A2E] text-lg">Cómo instalar</p>
-              <button onClick={() => setShowInstallInstructions(false)} className="mt-2 w-full py-3 rounded-[14px] bg-[#7F77DD] text-white font-bold text-sm active:scale-95 transition-transform">
-                Entendido
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Tus Puntos HORMI disponibles */}
         <div className="bg-[#7F77DD] text-white rounded-[20px] shadow-[0_4px_16px_rgba(127,119,221,0.3)] p-6 flex flex-col items-center">
           <h2 className="text-sm font-bold uppercase tracking-widest opacity-90 mb-1">Tus Puntos HORMI disponibles</h2>
-          <div className="flex items-baseline gap-2">
-            <span className="text-6xl font-black">{currentPts}</span>
-            <span className="text-lg font-bold opacity-80">WP</span>
+          <div className="flex items-baseline gap-2 mt-2">
+            <span className="text-7xl font-black">{currentPts}</span>
+            <span className="text-xl font-bold opacity-80">WP</span>
           </div>
-          <span className="mt-2 bg-white/20 text-white font-black text-[13px] px-4 py-1.5 rounded-full backdrop-blur-sm">
-            = ${(currentPts / 100).toFixed(2)} en descuentos
-          </span>
         </div>
 
         {/* Catálogo tipo McDonald's */}
@@ -314,9 +239,8 @@ export function HomeView({ setActiveTab }) {
 
 // ── QR Modal ──────────────────────────────────────────────────────────────────
 function QRRewardModal({ data, onClose }) {
-  const expiryStr = data.expiresAt
-    ? new Date(data.expiresAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })
-    : "60 días";
+  const expiresAt = data.expiresAt ? new Date(data.expiresAt) : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
+  const expiryStr = expiresAt.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
   const qrContent = data.validateUrl || data.qrCode;
 
@@ -334,6 +258,62 @@ function QRRewardModal({ data, onClose }) {
     }
   };
 
+  const getConditions = (name) => {
+    const n = name.toLowerCase();
+    if (n.includes("farmacia")) {
+      return (
+        <ul className="list-disc pl-4 text-[11px] text-gray-500 flex flex-col gap-1 mt-1">
+          <li>15% de descuento en medicamentos genéricos</li>
+          <li>Tope máximo: $2.000 por canje</li>
+          <li>Válido en productos seleccionados</li>
+          <li>No acumulable con otras promociones</li>
+        </ul>
+      );
+    }
+    if (n.includes("odontología")) {
+      return (
+        <ul className="list-disc pl-4 text-[11px] text-gray-500 flex flex-col gap-1 mt-1">
+          <li>20% de descuento en consulta y limpieza</li>
+          <li>Tope máximo: $5.000 por canje</li>
+          <li>Primer turno únicamente</li>
+          <li>Presentar QR al momento del turno</li>
+        </ul>
+      );
+    }
+    if (n.includes("laboratorio")) {
+      return (
+        <ul className="list-disc pl-4 text-[11px] text-gray-500 flex flex-col gap-1 mt-1">
+          <li>25% de descuento en análisis de rutina</li>
+          <li>Incluye: hemograma, glucemia, colesterol</li>
+          <li>No incluye estudios de alta complejidad</li>
+          <li>Válido de lunes a viernes</li>
+        </ul>
+      );
+    }
+    if (n.includes("dietética")) {
+      return (
+        <ul className="list-disc pl-4 text-[11px] text-gray-500 flex flex-col gap-1 mt-1">
+          <li>10% de descuento en productos naturales</li>
+          <li>Tope máximo: $1.500 por canje</li>
+          <li>No incluye suplementos importados</li>
+        </ul>
+      );
+    }
+    if (n.includes("descuento")) {
+      return (
+        <ul className="list-disc pl-4 text-[11px] text-gray-500 flex flex-col gap-1 mt-1">
+          <li>Descuento válido en productos seleccionados</li>
+          <li>Consultar condiciones en el local</li>
+          <li>No acumulable con otras promociones</li>
+          <li>Presentar QR al momento del canje</li>
+        </ul>
+      );
+    }
+    return null;
+  };
+
+  const conditionsNode = getConditions(data.name);
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center font-sans" onClick={onClose}>
       <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" />
@@ -349,7 +329,7 @@ function QRRewardModal({ data, onClose }) {
             <div>
               <h2 className="text-[17px] font-black text-[#1A1A2E] leading-tight">{data.name}</h2>
               <p className="text-[12px] font-bold text-[#22C55E] flex items-center gap-1">
-                <span>⏱️</span> Válido por {expiryStr}
+                <span>⏱️</span> Válido hasta el {expiryStr}
               </p>
             </div>
           </div>
@@ -366,7 +346,17 @@ function QRRewardModal({ data, onClose }) {
           <p className="font-mono text-xl text-[#1A1A2E] font-black tracking-[0.2em]">{data.qrCode}</p>
         </div>
 
-        <div className="flex w-full gap-3 mt-2">
+        {/* Condiciones */}
+        {conditionsNode && (
+          <div className="bg-gray-50 w-full rounded-[16px] p-4 text-left border border-gray-100">
+            <p className="text-[12px] font-bold text-[#1A1A2E] mb-1 flex items-center gap-1">
+              <span>📋</span> Condiciones:
+            </p>
+            {conditionsNode}
+          </div>
+        )}
+
+        <div className="flex w-full gap-3 mt-1">
           <button
             onClick={onClose}
             className="flex-1 py-4 rounded-[16px] bg-[#F8F7FF] text-[#1A1A2E] font-bold text-[15px] active:scale-[0.98] transition-all"
