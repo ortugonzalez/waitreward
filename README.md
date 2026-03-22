@@ -14,9 +14,10 @@
 
 In Argentina, **wait time is the #1 complaint** in the healthcare system:
 
-- 📊 Average wait: **45+ minutes** beyond scheduled appointment time
-- 🏥 **15M+ annual medical consultations** affected across Argentina
-- 💸 Clinics overbook because health insurers pay up to **3x less** than private patients
+- 📊 Patients wait between **45 and 87 minutes** beyond their scheduled time *(studies in Mexico and Peru)*
+- 🚪 **40% never return** to that clinic after a bad wait experience
+- 📣 **Over 90%** share their bad experience with others
+- 💸 Acquiring a new patient costs **5–8x more** than retaining one
 - ❌ **Zero compensation** for patients who wait
 
 > A single mid-size clinic loses ~$375,000 ARS/month in patient attrition due to poor wait experience.
@@ -52,6 +53,15 @@ Think Starbucks Stars — but for healthcare. Fully on-chain. Automatic. Invisib
 
 ---
 
+## Demo Video
+
+🎬 [Watch the full demo](https://drive.google.com/drive/folders/1W_5sEj4SU1aWaD5_BcW-mDntAOSI87oV?usp=sharing)
+
+> 3-minute walkthrough showing the complete patient journey —
+> from waiting room to blockchain redemption.
+
+---
+
 ## Point Tiers
 
 | Delay | HORMI Points | Value |
@@ -79,6 +89,7 @@ Think Starbucks Stars — but for healthcare. Fully on-chain. Automatic. Invisib
 | Monthly membership | Commerce | Fixed fee (0.01 ETH/month) |
 | Protocol fee | Automatic | 3% per redemption |
 | Clinic subscription | Clinic | SaaS per size |
+| DeFi yield (V2) | Protocol | Yield on every on-chain transaction |
 
 **V2 Roadmap:** Commerce memberships deposited in DeFi yield protocols (Aave/Morpho) — commerces "lend" capital instead of "spending" it.
 
@@ -147,8 +158,9 @@ Think Starbucks Stars — but for healthcare. Fully on-chain. Automatic. Invisib
 
 ## AI Module
 
-Predicts delays **before they happen** — turning reactive compensation
-into proactive clinic management.
+Predicts delays **before they happen**, based on assigned appointments
+and each patient's check-in history — so clinics manage better
+and patients arrive on time.
 
 ```
 GET /predict-delay/<clinic_id>/<specialty>
@@ -276,7 +288,7 @@ redemption brings verified new customers tracked on-chain.
 ## Built by
 
 **Octavio** — Solo builder
-Smart Contract · Backend · AI Integration · Product · Deploy
+Smart Contract · Backend · AI · Frontend · Deploy · Product
 
 *HORMI is named after my grandmother Josefina, nicknamed
 "hormiguita negra" (little black ant) — small, tireless,
